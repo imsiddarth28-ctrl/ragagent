@@ -24,7 +24,12 @@ class Settings:
     DEFAULT_RELEVANCE_THRESHOLD: float = 1.2
 
     # Database Configuration
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/rag_agent")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+
+    # Supabase Configuration (for Storage)
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_BUCKET: str = "documents"
 
     # RAG System Prompt
     RAG_SYSTEM_PROMPT: str = """

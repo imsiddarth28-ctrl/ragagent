@@ -19,81 +19,76 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(EXTRACTED_DIR, exist_ok=True)
 os.makedirs(CHUNKS_DIR, exist_ok=True)
 
+from supabase import create_client, Client
+from app.core.config import settings
+
+# Global Supabase client for storage
+supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+
 class DocumentService:
     @classmethod
     async def process_upload(cls, db: Session, file_name: str, file_content: bytes) -> Document:
         doc_id = str(uuid.uuid4())
         extension = file_name.split(".")[-1].lower()
         internal_filename = f"{doc_id}.{extension}"
-        file_path = os.path.join(UPLOAD_DIR, internal_filename)
 
-        # Save original file
-        with open(file_path, "wb") as f:
-            f.write(file_content)
+        # 1. Upload to Supabase Storage
+        try:
+            supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
+                path=internal_filename,
+                file=file_content,
+                file_options={"content-type": f"application/{extension}"}
+            )
+            storage_path = internal_filename
+        except Exception as e:
+            print(f"❌ Storage upload failed: {e}")
+            raise Exception("Failed to upload file to cloud storage.")
 
-        # Create document record in DB (processing state)
+        # 2. Create document record in DB (processing state)
         db_doc = Document(
             id=doc_id,
             name=file_name,
             file_type=extension,
             file_size=len(file_content),
-            storage_path=file_path,
+            storage_path=storage_path,
             status=DocumentStatus.processing
         )
         db.add(db_doc)
         db.commit()
         db.refresh(db_doc)
 
-        # Extract text based on type
+        # 3. Extract text (We process the bytes directly since they are already in memory)
         text_content = []
         pages_count = 0
-        status = DocumentStatus.ready
-
+        
         try:
             if extension == "pdf":
-                text_content, pages_count = cls._extract_pdf(file_path)
+                text_content, pages_count = cls._extract_pdf_bytes(file_content)
             elif extension == "docx":
-                text_content, pages_count = cls._extract_docx(file_path)
+                text_content, pages_count = cls._extract_docx_bytes(file_content)
             elif extension == "txt":
-                text_content, pages_count = cls._extract_txt(file_path)
+                text_content, pages_count = cls._extract_txt_bytes(file_content)
             else:
                 raise Exception(f"Unsupported file type: {extension}")
             
-            # Save extracted text
-            extraction_path = os.path.join(EXTRACTED_DIR, f"{doc_id}.json")
-            with open(extraction_path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "doc_id": doc_id,
-                    "name": file_name,
-                    "pages": text_content
-                }, f, ensure_ascii=False, indent=4)
-
-            # Create Chunks
+            # 4. Create Chunks
             chunks = ChunkingService.create_chunks(doc_id, file_name, text_content)
-            
-            # Save chunks to disk
-            chunks_path = os.path.join(CHUNKS_DIR, f"{doc_id}.json")
-            with open(chunks_path, "w", encoding="utf-8") as f:
-                json.dump([c.to_dict() for c in chunks], f, ensure_ascii=False, indent=4)
-
             chunks_count = len(chunks)
 
-            # Generate Embeddings
+            # 5. Generate Embeddings & Store in pgvector
             embedding_data = await EmbeddingService.generate_embeddings(chunks)
             embeddings = [item["embedding"] for item in embedding_data]
 
-            # Store in ChromaDB
-            await VectorStoreService.delete_document_chunks(doc_id)
             await VectorStoreService.upsert_chunks(chunks, embeddings)
             
             # Update record
             db_doc.page_count = pages_count
             db_doc.chunks_count = chunks_count
             db_doc.status = DocumentStatus.ready
-            print(f"✅ Success: Document '{file_name}' processed. {chunks_count} chunks stored in ChromaDB.")
+            print(f"✅ Success: Document '{file_name}' processed.")
 
         except Exception as e:
-            print(f"❌ Error: Document processing failed for '{file_name}': {e}")
+            print(f"❌ Error: {e}")
             db_doc.status = DocumentStatus.failed
         
         db.commit()
@@ -101,26 +96,23 @@ class DocumentService:
         return db_doc
 
     @staticmethod
-    def _extract_pdf(path: str) -> Tuple[List[Dict], int]:
+    def _extract_pdf_bytes(content: bytes) -> Tuple[List[Dict], int]:
         pages = []
-        doc = fitz.open(path)
+        doc = fitz.open(stream=content, filetype="pdf")
         for i, page in enumerate(doc):
-            pages.append({
-                "page": i + 1,
-                "text": page.get_text()
-            })
+            pages.append({"page": i + 1, "text": page.get_text()})
         return pages, len(doc)
 
     @staticmethod
-    def _extract_docx(path: str) -> Tuple[List[Dict], int]:
-        doc = DocxDocument(path)
+    def _extract_docx_bytes(content: bytes) -> Tuple[List[Dict], int]:
+        from io import BytesIO
+        doc = DocxDocument(BytesIO(content))
         full_text = "\n".join([para.text for para in doc.paragraphs])
         return [{"page": 1, "text": full_text}], 1
 
     @staticmethod
-    def _extract_txt(path: str) -> Tuple[List[Dict], int]:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            text = f.read()
+    def _extract_txt_bytes(content: bytes) -> Tuple[List[Dict], int]:
+        text = content.decode("utf-8", errors="ignore")
         return [{"page": 1, "text": text}], 1
 
     @classmethod
