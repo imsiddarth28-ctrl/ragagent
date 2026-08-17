@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.env/
+uploads/
+extracted_text/
+chunks/
+vector_db/
+metadata.json
+*.db
+alembic/versions/*.pyc
