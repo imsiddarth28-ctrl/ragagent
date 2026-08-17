@@ -8,9 +8,14 @@ import '../../models/message_model.dart';
 import '../../models/conversation_model.dart';
 
 class ApiService {
-  // For local Android development, replace with your Windows machine's LAN IP
-  // e.g., 'http://192.168.x.x:8000'
-  static const String _baseUrl = 'http://127.0.0.1:8000';
+  // Production Render URL
+  static const String _prodUrl = 'https://ragagent-9b88.onrender.com';
+  static const String _localUrl = 'http://127.0.0.1:8000';
+
+  // Set to true for production deployment
+  static const bool _useProd = true; 
+
+  String get _baseUrl => _useProd ? _prodUrl : _localUrl;
 
   Future<List<AIProviderModel>> getProviders() async {
     try {

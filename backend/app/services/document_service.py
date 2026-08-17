@@ -130,18 +130,14 @@ class DocumentService:
             return False
 
         try:
-            # 1. Delete from ChromaDB
+            # 1. Delete from ChromaDB/Vector Store
             await VectorStoreService.delete_document_chunks(doc_id)
 
-            # 2. Delete local files
-            paths_to_delete = [
-                doc.storage_path,
-                os.path.join(EXTRACTED_DIR, f"{doc_id}.json"),
-                os.path.join(CHUNKS_DIR, f"{doc_id}.json")
-            ]
-            for path in paths_to_delete:
-                if os.path.exists(path):
-                    os.remove(path)
+            # 2. Delete from Supabase Storage
+            try:
+                supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
+            except Exception as e:
+                print(f"⚠️ Warning: Could not remove file from storage: {e}")
 
             # 3. Delete from PostgreSQL
             db.delete(doc)

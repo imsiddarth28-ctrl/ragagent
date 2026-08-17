@@ -59,11 +59,9 @@ class VectorStoreService:
         """
         Removes all chunks associated with a specific document_id.
         """
-        # Note: vecs client deletion logic depends on metadata filtering
-        # In current version, we might need a custom query or use collection.delete
-        # vecs delete doesn't directly support 'where' in the same way as Chroma
-        # but we can filter by IDs.
-        pass
+        collection = cls.get_collection()
+        # pgvector (vecs) supports filtering by metadata during deletion
+        collection.delete(filters={"document_id": {"$eq": document_id}})
 
     @classmethod
     async def query(cls, query_embedding: List[float], top_k: int = 4) -> Dict:

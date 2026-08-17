@@ -1,25 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/ai_config_model.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/secure_storage_service.dart';
 
 final apiServiceProvider = Provider((ref) => ApiService());
+final secureStorageProvider = Provider((ref) => SecureStorageService());
 
 class AISettingsNotifier extends StateNotifier<AISettings> {
   final Ref _ref;
+  final SecureStorageService _storage;
 
-  AISettingsNotifier(this._ref) : super(AISettings(
+  AISettingsNotifier(this._ref, this._storage) : super(AISettings(
     selectedProvider: null,
     selectedModel: null,
     apiKeys: {},
-  ));
+  )) {
+    _loadFromStorage();
+  }
+
+  Future<void> _loadFromStorage() async {
+    final provider = await _storage.getSelectedProvider();
+    final model = await _storage.getSelectedModel();
+    
+    // We'll load keys as they are needed or all at once if we have provider list
+    // For now, let's just load the settings and any existing keys for known providers
+    final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic']);
+    
+    state = state.copyWith(
+      selectedProvider: provider,
+      selectedModel: model,
+      apiKeys: savedKeys,
+    );
+  }
 
   void setProvider(String providerId) {
     if (state.selectedProvider != providerId) {
       state = state.copyWith(
         selectedProvider: providerId,
-        selectedModel: null, // Reset model when provider changes
+        selectedModel: null, 
       );
-      // Reset test state when configuration changes
+      _storage.saveSelectedProvider(providerId);
       _ref.read(connectionTestProvider.notifier).reset();
     }
   }
@@ -27,7 +47,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
   void setModel(String modelId) {
     if (state.selectedModel != modelId) {
       state = state.copyWith(selectedModel: modelId);
-      // Reset test state when configuration changes
+      _storage.saveSelectedModel(modelId);
       _ref.read(connectionTestProvider.notifier).reset();
     }
   }
@@ -36,7 +56,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
     final newKeys = Map<String, String>.from(state.apiKeys);
     newKeys[providerId] = key;
     state = state.copyWith(apiKeys: newKeys);
-    // Reset test state when configuration changes
+    _storage.saveApiKey(providerId, key);
     _ref.read(connectionTestProvider.notifier).reset();
   }
 
@@ -46,7 +66,8 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
 }
 
 final aiSettingsProvider = StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
-  return AISettingsNotifier(ref);
+  final storage = ref.watch(secureStorageProvider);
+  return AISettingsNotifier(ref, storage);
 });
 
 final providersProvider = FutureProvider<List<AIProviderModel>>((ref) async {
