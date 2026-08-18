@@ -231,12 +231,23 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        return Document.fromJson(data);
+        final doc = Document.fromJson(data);
+        if (doc.status == DocumentStatus.failed) {
+          throw Exception('Document processing failed: Could not extract text or index chunks.');
+        }
+        return doc;
       } else {
-        throw Exception('Upload failed: ${response.statusCode}');
+        String errorMsg = 'Upload failed (${response.statusCode})';
+        try {
+          final data = json.decode(response.body);
+          if (data is Map && data.containsKey('detail')) {
+            errorMsg = data['detail'].toString();
+          }
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } catch (e) {
-      throw Exception('Network error during upload: $e');
+      throw Exception('${e.toString().replaceAll("Exception: ", "")}');
     }
   }
 

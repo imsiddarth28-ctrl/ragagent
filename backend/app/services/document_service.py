@@ -153,7 +153,9 @@ class DocumentService:
             print(f"✅ Success: Document '{file_name}' processed with {chunks_count} chunks.")
 
         except Exception as e:
-            print(f"❌ Document processing error: {e}")
+            import traceback
+            traceback.print_exc()
+            print(f"❌ Document processing error for '{file_name}': {e}")
             db_doc.status = DocumentStatus.failed
         
         db.commit()
