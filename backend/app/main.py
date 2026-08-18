@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
@@ -7,6 +9,7 @@ from app.routes.providers import router as providers_router
 from app.routes.documents import router as documents_router
 from app.routes.retrieval import router as retrieval_router
 from app.routes.conversations import router as conversations_router
+from app.services.embedding_service import EmbeddingService
 
 # Auto-create all tables in the database if they do not exist
 try:
@@ -14,10 +17,17 @@ try:
 except Exception as e:
     print(f"Warning: Automatic table creation encountered: {e}")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-warm embedding model in background thread so first query has 0 latency
+    asyncio.create_task(asyncio.to_thread(EmbeddingService.get_model))
+    yield
+
 app = FastAPI(
     title="RAG Agent & Multi-Tool API",
     description="Backend API for AI Document Assistant, Authentication, Vector Retrieval & Agent Pipelines",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 # CORS Configuration

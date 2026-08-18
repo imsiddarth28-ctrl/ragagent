@@ -16,9 +16,8 @@ class RetrievalService:
         Embeds the query and performs a similarity search in the vector store.
         Filters results by a distance threshold.
         """
-        # 1. Embed query
-        model = EmbeddingService.get_model()
-        query_embedding = model.encode([query], show_progress_bar=False)[0].tolist()
+        # 1. Embed query asynchronously
+        query_embedding = await EmbeddingService.encode_query(query)
 
         # 2. Query Vector Store
         raw_results = await VectorStoreService.query(query_embedding, top_k=top_k, document_ids=document_ids)

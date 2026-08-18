@@ -16,6 +16,17 @@ class EmbeddingService:
         return cls._model
 
     @classmethod
+    async def encode_query(cls, query: str) -> List[float]:
+        """
+        Embeds a single search query on a threadpool without blocking the async event loop.
+        """
+        def _encode():
+            model = cls.get_model()
+            return model.encode([query], show_progress_bar=False)[0].tolist()
+
+        return await asyncio.to_thread(_encode)
+
+    @classmethod
     async def generate_embeddings(cls, chunks: List[DocumentChunk]) -> List[Dict]:
         """
         Generates embeddings for a list of DocumentChunk objects in batch.
