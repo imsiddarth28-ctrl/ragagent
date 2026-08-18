@@ -59,7 +59,6 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildContent(BuildContext context, WidgetRef ref, List<Document> docs) {
     final recentDocs = docs.take(3).toList();
     final totalSize = docs.fold<int>(0, (sum, doc) {
-      // Basic size parsing for display purposes
       try {
         if (doc.size.contains('MB')) {
           return sum + (double.parse(doc.size.split(' ')[0]) * 1024 * 1024).toInt();
@@ -74,6 +73,7 @@ class HomeScreen extends ConsumerWidget {
     });
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: () => ref.read(documentListProvider.notifier).refresh(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -89,27 +89,35 @@ class HomeScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back,',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      'Welcome back 👋',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: AppColors.textSecondaryLight,
-                            fontWeight: FontWeight.normal,
                           ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      'RAG User',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      'AI Workspace',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimaryLight,
                           ),
                     ),
                   ],
                 ),
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=raguser'),
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.borderLight, width: 2),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.primaryTint,
+                    child: Icon(Icons.person_rounded, color: AppColors.primary),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.l),
 
             // AI Assistant Card
             _buildAICard(context),
@@ -120,20 +128,42 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: StatsCard(
-                    label: 'Documents',
+                    label: 'Indexed Files',
                     value: docs.length.toString(),
-                    icon: Icons.description_outlined,
+                    icon: Icons.description_rounded,
                     color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.m),
                 Expanded(
                   child: StatsCard(
-                    label: 'Storage',
+                    label: 'Storage Used',
                     value: _formatBytes(totalSize),
-                    icon: Icons.cloud_outlined,
-                    color: AppColors.accent,
+                    icon: Icons.cloud_done_rounded,
+                    color: AppColors.secondary,
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // Quick Actions
+            Row(
+              children: [
+                _buildQuickAction(
+                  context,
+                  'Upload Doc',
+                  Icons.upload_file_rounded,
+                  AppColors.primary,
+                  () => Navigator.of(context).pushNamed('/upload'),
+                ),
+                const SizedBox(width: AppSpacing.m),
+                _buildQuickAction(
+                  context,
+                  'Ask AI Chat',
+                  Icons.auto_awesome_rounded,
+                  AppColors.secondary,
+                  () => Navigator.of(context).pushNamed('/chat'),
                 ),
               ],
             ),
@@ -145,14 +175,15 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 const Text(
                   'Recent Documents',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textPrimaryLight),
                 ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(navigationIndexProvider.notifier).state = 1;
-                  },
-                  child: const Text('View all'),
-                ),
+                if (docs.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      ref.read(navigationIndexProvider.notifier).state = 1;
+                    },
+                    child: const Text('View all'),
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.s),
@@ -161,31 +192,6 @@ class HomeScreen extends ConsumerWidget {
             else
               ...recentDocs.map((doc) => RecentDocumentCard(document: doc)),
             
-            const SizedBox(height: AppSpacing.xl),
-            
-            // Quick Actions
-            const Text(
-              'Quick Actions',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: AppSpacing.m),
-            Row(
-              children: [
-                _buildQuickAction(
-                  context,
-                  'Upload',
-                  Icons.upload_file_rounded,
-                  () => Navigator.of(context).pushNamed('/upload'),
-                ),
-                const SizedBox(width: AppSpacing.m),
-                _buildQuickAction(
-                  context,
-                  'Ask AI',
-                  Icons.psychology_rounded,
-                  () => Navigator.of(context).pushNamed('/chat'),
-                ),
-              ],
-            ),
             const SizedBox(height: AppSpacing.xxl),
           ],
         ),
@@ -199,53 +205,78 @@ class HomeScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.l),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
+          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 32),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppRadius.m),
+                ),
+                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Text(
+                  'RAG Assistant Active',
+                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.m),
           const Text(
             'What would you like to know?',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: AppSpacing.s),
+          const SizedBox(height: AppSpacing.xs),
           Text(
-            'Ask anything about your uploaded documents and get instant answers.',
+            'Ask anything about your uploaded documents and get grounded answers.',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
             ),
           ),
           const SizedBox(height: AppSpacing.l),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pushNamed('/chat'),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+            label: const Text('Start Conversation'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: AppColors.primary,
-              minimumSize: const Size(180, 48),
+              minimumSize: const Size(190, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.m),
               ),
             ),
-            child: const Text('Start a conversation'),
           ),
         ],
       ),
@@ -257,43 +288,69 @@ class HomeScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppRadius.l),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         children: [
-          Icon(Icons.description_outlined, size: 40, color: Colors.grey.shade300),
-          const SizedBox(height: AppSpacing.s),
-          const Text('No documents yet', style: TextStyle(fontWeight: FontWeight.w600)),
-          TextButton(
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryTint,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.note_add_rounded, size: 36, color: AppColors.primary),
+          ),
+          const SizedBox(height: AppSpacing.m),
+          const Text('No documents uploaded yet', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+          const SizedBox(height: 4),
+          const Text(
+            'Upload a PDF, DOCX, or TXT file to start querying.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+          ),
+          const SizedBox(height: AppSpacing.m),
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pushNamed('/upload'),
-            child: const Text('Upload your first file'),
+            icon: const Icon(Icons.upload_file_rounded, size: 18),
+            label: const Text('Upload Document'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(180, 42),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, String label, IconData icon, VoidCallback onTap) {
+  Widget _buildQuickAction(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.l),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.l),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.m, horizontal: AppSpacing.m),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(AppRadius.l),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: AppColors.borderLight),
           ),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppColors.primary),
-              const SizedBox(height: AppSpacing.s),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.m),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.s),
               Text(
                 label,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimaryLight),
               ),
             ],
           ),

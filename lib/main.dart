@@ -70,60 +70,60 @@ class MainNavigationShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationIndexProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: _screens[selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -3),
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1,
             ),
-          ],
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          onTap: (index) {
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (index) {
             ref.read(navigationIndexProvider.notifier).state = index;
           },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedItemColor: Colors.grey.shade500,
-          showUnselectedLabels: true,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          indicatorColor: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+          elevation: 0,
+          destinations: const [
+            NavigationDestination(
               icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
+              selectedIcon: Icon(Icons.home_rounded, color: Color(0xFF4F46E5)),
               label: 'Home',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.description_outlined),
-              activeIcon: Icon(Icons.description_rounded),
+              selectedIcon: Icon(Icons.description_rounded, color: Color(0xFF4F46E5)),
               label: 'Docs',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.chat_bubble_outline_rounded),
-              activeIcon: Icon(Icons.chat_bubble_rounded),
+              selectedIcon: Icon(Icons.chat_bubble_rounded, color: Color(0xFF4F46E5)),
               label: 'Chat',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings_rounded),
+              selectedIcon: Icon(Icons.settings_rounded, color: Color(0xFF4F46E5)),
               label: 'Settings',
             ),
           ],
         ),
       ),
-      floatingActionButton: selectedIndex == 1 
-        ? FloatingActionButton(
-            onPressed: () => Navigator.of(context).pushNamed('/upload'),
-            child: const Icon(Icons.add_rounded),
-          )
-        : null,
+      floatingActionButton: selectedIndex == 1
+          ? FloatingActionButton.extended(
+              onPressed: () => Navigator.of(context).pushNamed('/upload'),
+              icon: const Icon(Icons.upload_file_rounded),
+              label: const Text('Upload'),
+            )
+          : null,
     );
   }
 }

@@ -27,16 +27,25 @@ class ChatHistoryScreen extends ConsumerWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.l),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.l, AppSpacing.m, AppSpacing.l, AppSpacing.s),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search conversations...',
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: AppColors.surfaceLight,
+                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.m),
-                  borderSide: BorderSide.none,
+                  borderSide: const BorderSide(color: AppColors.borderLight),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.m),
+                  borderSide: const BorderSide(color: AppColors.borderLight),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.m),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                 ),
               ),
             ),
@@ -46,15 +55,15 @@ class ChatHistoryScreen extends ConsumerWidget {
               data: (conversations) => conversations.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l, vertical: AppSpacing.s),
                       itemCount: conversations.length,
                       itemBuilder: (context, index) {
                         final chat = conversations[index];
                         return _buildChatCard(context, ref, chat);
                       },
                     ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, st) => Center(child: Text('Error: $err')),
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (err, st) => Center(child: Text('Error: $err', style: const TextStyle(color: AppColors.error))),
             ),
           ),
         ],
@@ -65,15 +74,18 @@ class ChatHistoryScreen extends ConsumerWidget {
         },
         label: const Text('New Chat'),
         icon: const Icon(Icons.add_rounded),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
       ),
     );
   }
 
   Widget _buildChatCard(BuildContext context, WidgetRef ref, Conversation chat) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.m),
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.s),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppRadius.l),
+        border: Border.all(color: AppColors.borderLight),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.of(context).pushNamed('/chat', arguments: chat);
@@ -90,21 +102,27 @@ class ChatHistoryScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       chat.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimaryLight),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(
                     DateFormat('HH:mm').format(chat.updatedAt),
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMutedLight),
                   ),
                   PopupMenuButton(
-                    icon: const Icon(Icons.more_vert_rounded, size: 20),
+                    icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textSecondaryLight),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Text('Delete', style: TextStyle(color: AppColors.error)),
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: AppColors.error)),
+                          ],
+                        ),
                       ),
                     ],
                     onSelected: (val) {
@@ -118,21 +136,21 @@ class ChatHistoryScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xs),
               if (chat.documentUsed != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.description_outlined, size: 12, color: AppColors.primary),
+                      const Icon(Icons.description_rounded, size: 12, color: AppColors.primary),
                       const SizedBox(width: 4),
                       Text(
                         chat.documentUsed!,
-                        style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
               Text(
                 chat.lastMessage,
-                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 14),
+                style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -145,15 +163,32 @@ class ChatHistoryScreen extends ConsumerWidget {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline_rounded, size: 64, color: Colors.grey.shade300),
-          const SizedBox(height: AppSpacing.m),
-          const Text('No conversations yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const SizedBox(height: AppSpacing.s),
-          Text('Start a new chat to interact with your documents.', style: TextStyle(color: AppColors.textSecondaryLight)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryTint,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: AppColors.primary),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            const Text(
+              'No conversations yet',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimaryLight),
+            ),
+            const SizedBox(height: AppSpacing.s),
+            const Text(
+              'Start a new chat to interact with your indexed documents.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }

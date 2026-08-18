@@ -17,25 +17,44 @@ class StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.m),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppRadius.l),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: AppSpacing.s),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.m),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(height: AppSpacing.m),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
+            style: TextStyle(
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

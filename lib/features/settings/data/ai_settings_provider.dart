@@ -2,28 +2,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/ai_config_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/secure_storage_service.dart';
+import '../../auth/data/auth_provider.dart';
 
 final secureStorageProvider = Provider((ref) => SecureStorageService());
 
 class AISettingsNotifier extends StateNotifier<AISettings> {
   final Ref _ref;
   final SecureStorageService _storage;
+  String? _currentUserId;
 
   AISettingsNotifier(this._ref, this._storage) : super(AISettings(
     selectedProvider: null,
     selectedModel: null,
     apiKeys: {},
   )) {
+    final auth = _ref.read(authProvider);
+    _currentUserId = auth.user?.id ?? (auth.isGuest ? 'guest' : null);
     _loadFromStorage();
+
+    // Re-load settings whenever auth user changes
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      final newUserId = next.user?.id ?? (next.isGuest ? 'guest' : null);
+      if (_currentUserId != newUserId) {
+        _currentUserId = newUserId;
+        _loadFromStorage();
+      }
+    });
   }
 
   Future<void> _loadFromStorage() async {
-    final provider = await _storage.getSelectedProvider();
-    final model = await _storage.getSelectedModel();
-    
-    // We'll load keys as they are needed or all at once if we have provider list
-    // For now, let's just load the settings and any existing keys for known providers
-    final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic', 'groq']);
+    final provider = await _storage.getSelectedProvider(userId: _currentUserId);
+    final model = await _storage.getSelectedModel(userId: _currentUserId);
+    final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic', 'groq'], userId: _currentUserId);
     
     state = state.copyWith(
       selectedProvider: provider,
@@ -38,7 +48,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
         selectedProvider: providerId,
         selectedModel: null, 
       );
-      _storage.saveSelectedProvider(providerId);
+      _storage.saveSelectedProvider(providerId, userId: _currentUserId);
       _ref.read(connectionTestProvider.notifier).reset();
     }
   }
@@ -46,7 +56,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
   void setModel(String modelId) {
     if (state.selectedModel != modelId) {
       state = state.copyWith(selectedModel: modelId);
-      _storage.saveSelectedModel(modelId);
+      _storage.saveSelectedModel(modelId, userId: _currentUserId);
       _ref.read(connectionTestProvider.notifier).reset();
     }
   }
@@ -55,12 +65,18 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
     final newKeys = Map<String, String>.from(state.apiKeys);
     newKeys[providerId] = key;
     state = state.copyWith(apiKeys: newKeys);
-    _storage.saveApiKey(providerId, key);
+    _storage.saveApiKey(providerId, key, userId: _currentUserId);
     _ref.read(connectionTestProvider.notifier).reset();
   }
 
   void setTopK(int val) {
     state = state.copyWith(topK: val);
+  }
+
+  void reload() {
+    final auth = _ref.read(authProvider);
+    _currentUserId = auth.user?.id ?? (auth.isGuest ? 'guest' : null);
+    _loadFromStorage();
   }
 }
 

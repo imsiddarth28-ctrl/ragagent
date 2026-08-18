@@ -6,18 +6,16 @@ const _themeStorageKey = 'app_theme_mode';
 const _storage = FlutterSecureStorage();
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark) {
+  ThemeModeNotifier() : super(ThemeMode.light) {
     _loadTheme();
   }
 
   Future<void> _loadTheme() async {
     final saved = await _storage.read(key: _themeStorageKey);
-    if (saved == 'light') {
-      state = ThemeMode.light;
-    } else if (saved == 'dark') {
+    if (saved == 'dark') {
       state = ThemeMode.dark;
     } else {
-      state = ThemeMode.dark; // Default to sleek dark mode
+      state = ThemeMode.light; // Default to clean light mode
     }
   }
 

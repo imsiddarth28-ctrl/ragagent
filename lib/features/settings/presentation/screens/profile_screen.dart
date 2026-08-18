@@ -125,37 +125,55 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xl),
             
             // Appearance Tile
-            Card(
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppRadius.l),
+                border: Border.all(color: isDark ? Colors.white10 : AppColors.borderLight),
+              ),
               child: SwitchListTile(
                 secondary: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: AppColors.primary),
-                title: const Text('Dark Mode', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(isDark ? 'Sleek Dark Theme enabled' : 'Light Theme enabled', style: const TextStyle(fontSize: 12)),
+                title: const Text('Dark Mode', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle: Text(isDark ? 'Dark Theme enabled' : 'Light Theme enabled', style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
                 value: isDark,
                 onChanged: (val) {
                   ref.read(themeProvider.notifier).setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
                 },
               ),
             ),
-            const SizedBox(height: AppSpacing.s),
+            const SizedBox(height: AppSpacing.m),
 
-            _buildActionItem(Icons.key_rounded, 'AI Provider & API Keys', () {
-              Navigator.of(context).pushNamed('/settings');
-            }, isDark),
-            _buildActionItem(Icons.security_rounded, 'Privacy & Cloud Storage', () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Supabase 100% Free Tier Cloud Storage active.')),
-              );
-            }, isDark),
-            _buildActionItem(Icons.info_outline_rounded, 'About RAG Agent', () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'RAG Agent AI',
-                applicationVersion: '2.0.0',
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppRadius.l),
+                border: Border.all(color: isDark ? Colors.white10 : AppColors.borderLight),
+              ),
+              child: Column(
                 children: [
-                  const Text('AI Document Retrieval & Multi-Tool Agent built with Flutter and FastAPI.'),
+                  _buildActionTile(Icons.key_rounded, 'AI Provider & API Keys', () {
+                    Navigator.of(context).pushNamed('/settings');
+                  }, isDark),
+                  const Divider(height: 1, indent: 56, endIndent: 16),
+                  _buildActionTile(Icons.security_rounded, 'Privacy & Cloud Storage', () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Supabase 100% Free Tier Cloud Storage active.')),
+                    );
+                  }, isDark),
+                  const Divider(height: 1, indent: 56, endIndent: 16),
+                  _buildActionTile(Icons.info_outline_rounded, 'About RAG Agent', () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'RAG Agent AI',
+                      applicationVersion: '2.0.0',
+                      children: const [
+                        Text('AI Document Retrieval & Multi-Tool Agent built with Flutter and FastAPI.'),
+                      ],
+                    );
+                  }, isDark),
                 ],
-              );
-            }, isDark),
+              ),
+            ),
             
             const SizedBox(height: AppSpacing.xl),
             AppButton(
@@ -179,7 +197,7 @@ class ProfileScreen extends ConsumerWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, fontSize: 12)),
         ],
@@ -187,15 +205,12 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String title, VoidCallback onTap, bool isDark, {Color? color}) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s),
-      child: ListTile(
-        leading: Icon(icon, color: color ?? AppColors.primary),
-        title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
-        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-        onTap: onTap,
-      ),
+  Widget _buildActionTile(IconData icon, String title, VoidCallback onTap, bool isDark, {Color? color}) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? AppColors.primary, size: 22),
+      title: Text(title, style: TextStyle(color: color ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight), fontWeight: FontWeight.w500, fontSize: 14)),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textMutedLight),
+      onTap: onTap,
     );
   }
 }

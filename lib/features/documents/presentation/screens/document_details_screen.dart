@@ -109,33 +109,47 @@ class DocumentDetailsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
             
-            // Stats
-            const Text('Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: AppSpacing.m),
-            _buildInfoRow(Icons.type_specimen_outlined, 'File type', document.type.toUpperCase()),
-            _buildInfoRow(Icons.straighten_rounded, 'File size', document.size),
-            _buildInfoRow(Icons.calendar_today_outlined, 'Upload date', DateFormat('MMM dd, yyyy HH:mm').format(document.uploadDate)),
-            _buildInfoRow(Icons.auto_stories_outlined, 'Pages', document.pages?.toString() ?? 'N/A'),
-            
-            const SizedBox(height: AppSpacing.xl),
-            
             // Knowledge Base Info
             Container(
               padding: const EdgeInsets.all(AppSpacing.m),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppColors.primaryTint,
                 borderRadius: BorderRadius.circular(AppRadius.m),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: AppColors.textSecondaryLight),
-                  const SizedBox(width: AppSpacing.m),
+                  Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 20),
+                  SizedBox(width: AppSpacing.m),
                   Expanded(
                     child: Text(
-                      'This document is indexed and available to the AI assistant for question answering.',
-                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 14),
+                      'This document is indexed and ready for question answering with RAG.',
+                      style: TextStyle(color: AppColors.primaryDark, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: AppSpacing.xl),
+
+            // Information Card
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.m),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppRadius.l),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('File Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimaryLight)),
+                  const SizedBox(height: AppSpacing.m),
+                  _buildInfoRow(Icons.insert_drive_file_outlined, 'File type', document.type.toUpperCase()),
+                  _buildInfoRow(Icons.straighten_rounded, 'File size', document.size),
+                  _buildInfoRow(Icons.calendar_today_outlined, 'Upload date', DateFormat('MMM dd, yyyy HH:mm').format(document.uploadDate)),
+                  _buildInfoRow(Icons.auto_stories_outlined, 'Pages', document.pages?.toString() ?? 'N/A', isLast: true),
                 ],
               ),
             ),
@@ -160,16 +174,16 @@ class DocumentDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, {bool isLast = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.m),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.m),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.textSecondaryLight),
-          const SizedBox(width: AppSpacing.m),
-          Text(label, style: TextStyle(color: AppColors.textSecondaryLight)),
+          Icon(icon, size: 18, color: AppColors.textSecondaryLight),
+          const SizedBox(width: AppSpacing.s),
+          Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 14)),
           const Spacer(),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimaryLight)),
         ],
       ),
     );

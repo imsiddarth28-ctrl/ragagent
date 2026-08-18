@@ -3,40 +3,55 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SecureStorageService {
   static const _storage = FlutterSecureStorage();
   
-  static const _keyProvider = 'ai_provider';
-  static const _keyModel = 'ai_model';
-  static const _prefixApiKey = 'api_key_';
+  String _userScope(String? userId) => (userId != null && userId.isNotEmpty) ? userId : 'guest';
 
-  Future<void> saveSelectedProvider(String providerId) async {
-    await _storage.write(key: _keyProvider, value: providerId);
+  Future<void> saveSelectedProvider(String providerId, {String? userId}) async {
+    final key = 'ai_provider_${_userScope(userId)}';
+    await _storage.write(key: key, value: providerId);
   }
 
-  Future<String?> getSelectedProvider() async {
-    return await _storage.read(key: _keyProvider);
+  Future<String?> getSelectedProvider({String? userId}) async {
+    final key = 'ai_provider_${_userScope(userId)}';
+    return await _storage.read(key: key);
   }
 
-  Future<void> saveSelectedModel(String modelId) async {
-    await _storage.write(key: _keyModel, value: modelId);
+  Future<void> saveSelectedModel(String modelId, {String? userId}) async {
+    final key = 'ai_model_${_userScope(userId)}';
+    await _storage.write(key: key, value: modelId);
   }
 
-  Future<String?> getSelectedModel() async {
-    return await _storage.read(key: _keyModel);
+  Future<String?> getSelectedModel({String? userId}) async {
+    final key = 'ai_model_${_userScope(userId)}';
+    return await _storage.read(key: key);
   }
 
-  Future<void> saveApiKey(String providerId, String key) async {
-    await _storage.write(key: '$_prefixApiKey$providerId', value: key);
+  Future<void> saveApiKey(String providerId, String apiKey, {String? userId}) async {
+    final key = 'api_key_${_userScope(userId)}_$providerId';
+    await _storage.write(key: key, value: apiKey);
   }
 
-  Future<String?> getApiKey(String providerId) async {
-    return await _storage.read(key: '$_prefixApiKey$providerId');
+  Future<String?> getApiKey(String providerId, {String? userId}) async {
+    final key = 'api_key_${_userScope(userId)}_$providerId';
+    return await _storage.read(key: key);
   }
 
-  Future<Map<String, String>> getAllApiKeys(List<String> providerIds) async {
+  Future<Map<String, String>> getAllApiKeys(List<String> providerIds, {String? userId}) async {
     Map<String, String> keys = {};
     for (var id in providerIds) {
-      final key = await getApiKey(id);
-      if (key != null) keys[id] = key;
+      final key = await getApiKey(id, userId: userId);
+      if (key != null && key.isNotEmpty) {
+        keys[id] = key;
+      }
     }
     return keys;
+  }
+
+  Future<void> clearUserData(String? userId) async {
+    final scope = _userScope(userId);
+    await _storage.delete(key: 'ai_provider_$scope');
+    await _storage.delete(key: 'ai_model_$scope');
+    for (var provider in ['google', 'openai', 'anthropic', 'groq']) {
+      await _storage.delete(key: 'api_key_${scope}_$provider');
+    }
   }
 }

@@ -80,30 +80,30 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
         width: double.infinity,
         height: 300,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2, style: BorderStyle.solid),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.l),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryTint,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.cloud_upload_outlined, size: 48, color: AppColors.primary),
             ),
             const SizedBox(height: AppSpacing.l),
             const Text(
-              'Choose a file',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Choose a file to upload',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimaryLight),
             ),
             const SizedBox(height: AppSpacing.s),
-            Text(
-              'or drag and drop your document here',
-              style: TextStyle(color: AppColors.textSecondaryLight),
+            const Text(
+              'Tap anywhere to browse PDF, DOCX, or TXT',
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
             ),
           ],
         ),
@@ -112,26 +112,33 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   }
 
   Widget _buildProcessingState() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.l),
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 48,
-              width: 48,
-              child: CircularProgressIndicator(),
-            ),
-            const SizedBox(height: AppSpacing.m),
-            const Text(
-              'Processing Document...',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: AppSpacing.s),
-            Text('Extracting text and preparing for RAG', style: TextStyle(color: AppColors.textSecondaryLight)),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppRadius.l),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: const Column(
+        children: [
+          SizedBox(
+            height: 44,
+            width: 44,
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
+          ),
+          SizedBox(height: AppSpacing.l),
+          Text(
+            'Processing Document...',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimaryLight),
+          ),
+          SizedBox(height: AppSpacing.s),
+          Text(
+            'Extracting text, chunking, and indexing into vector database.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

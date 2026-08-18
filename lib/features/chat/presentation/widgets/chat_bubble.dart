@@ -26,33 +26,50 @@ class ChatBubble extends StatelessWidget {
               const SizedBox(width: AppSpacing.s),
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.m),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isUser ? AppColors.primary : Colors.white,
+                    color: isUser ? AppColors.primary : AppColors.surfaceLight,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(AppRadius.m),
-                      topRight: Radius.circular(AppRadius.m),
-                      bottomLeft: Radius.circular(isUser ? AppRadius.m : 0),
-                      bottomRight: Radius.circular(isUser ? 0 : AppRadius.m),
+                      topLeft: const Radius.circular(AppRadius.l),
+                      topRight: const Radius.circular(AppRadius.l),
+                      bottomLeft: Radius.circular(isUser ? AppRadius.l : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : AppRadius.l),
                     ),
+                    border: isUser ? null : Border.all(color: AppColors.borderLight),
                     boxShadow: [
                       if (!isUser)
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                     ],
                   ),
                   child: isUser 
                     ? Text(
                         message.text,
-                        style: const TextStyle(color: Colors.white, fontSize: 15),
+                        style: const TextStyle(color: Colors.white, fontSize: 14.5, height: 1.4),
                       )
                     : MarkdownBody(
                         data: message.text,
+                        selectable: true,
                         styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(fontSize: 15, height: 1.5),
+                          p: const TextStyle(fontSize: 14.5, height: 1.5, color: AppColors.textPrimaryLight),
+                          h1: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                          h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                          h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+                          strong: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                          code: const TextStyle(
+                            backgroundColor: AppColors.inputFillLight,
+                            fontFamily: 'monospace',
+                            fontSize: 13,
+                            color: AppColors.primaryDark,
+                          ),
+                          codeblockDecoration: BoxDecoration(
+                            color: AppColors.inputFillLight,
+                            borderRadius: BorderRadius.circular(AppRadius.m),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
                         ),
                       ),
                 ),

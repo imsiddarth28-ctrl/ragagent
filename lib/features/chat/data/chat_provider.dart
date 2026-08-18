@@ -76,35 +76,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // 1. Get AI Settings for current provider/model/key
-    final settings = _ref.read(aiSettingsProvider);
-    final provider = settings.selectedProvider;
-    final model = settings.selectedModel;
-    final apiKey = provider != null ? settings.apiKeys[provider] : null;
-
-    if (provider == null || model == null || apiKey == null || apiKey.isEmpty) {
-      state = state.copyWith(error: "Please configure your AI Provider and API Key in Settings first.");
-      return;
-    }
-
-    // 2. Initialize conversation if needed
-    try {
-      if (_conversationId == null) {
-        final title = text.length > 20 ? "${text.substring(0, 20)}..." : text;
-        final conv = await _apiService.createConversation(
-          title, 
-          documentIds: _selectedDocumentIds,
-        );
-        _conversationId = conv.id;
-      }
-    } catch (e) {
-      state = state.copyWith(error: "Failed to initialize conversation.");
-      return;
-    }
-
-    // 3. Optimistically add user message
+    // 1. Add user message to state immediately
     final userMessage = Message(
-      id: DateTime.now().toString(),
+      id: DateTime.now().toIso8601String(),
       text: text,
       isUser: true,
       timestamp: DateTime.now(),
@@ -116,8 +90,55 @@ class ChatNotifier extends StateNotifier<ChatState> {
       error: null,
     );
 
+    // 2. Check AI Settings for current provider/model/key
+    final settings = _ref.read(aiSettingsProvider);
+    final provider = settings.selectedProvider;
+    final model = settings.selectedModel;
+    final apiKey = provider != null ? settings.apiKeys[provider] : null;
+
+    if (provider == null || model == null || apiKey == null || apiKey.trim().isEmpty) {
+      final helperMessage = Message(
+        id: 'missing_key_${DateTime.now().millisecondsSinceEpoch}',
+        text: '⚠️ **AI Provider or API Key Missing**\n\nTo generate answers from your documents, please go to the **Settings** tab, choose your AI Provider (Google Gemini, Groq, or OpenAI), and save your API Key.',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+
+      state = state.copyWith(
+        messages: [...state.messages, helperMessage],
+        isLoading: false,
+        error: "Please configure your AI Provider and API Key in Settings.",
+      );
+      return;
+    }
+
+    // 3. Initialize conversation if needed
     try {
-      // 4. Call real RAG endpoint
+      if (_conversationId == null) {
+        final title = text.length > 24 ? "${text.substring(0, 24)}..." : text;
+        final conv = await _apiService.createConversation(
+          title, 
+          documentIds: _selectedDocumentIds,
+        );
+        _conversationId = conv.id;
+      }
+    } catch (e) {
+      final failMessage = Message(
+        id: 'conv_err_${DateTime.now().millisecondsSinceEpoch}',
+        text: '⚠️ **Could not connect to backend**\n\nPlease verify your internet connection or check that the backend is online.',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      state = state.copyWith(
+        messages: [...state.messages, failMessage],
+        isLoading: false,
+        error: "Failed to initialize conversation.",
+      );
+      return;
+    }
+
+    // 4. Call real RAG endpoint
+    try {
       final aiMessage = await _apiService.askQuestion(
         conversationId: _conversationId!,
         question: text,
@@ -132,9 +153,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isLoading: false,
       );
     } catch (e) {
+      final cleanError = e.toString().replaceAll('Exception: ', '').replaceAll('RAG Agent error: ', '');
+      final errorMessage = Message(
+        id: 'err_${DateTime.now().millisecondsSinceEpoch}',
+        text: '⚠️ **AI Error**: $cleanError\n\n_Tip: Verify your API key in Settings > AI Configuration or test your connection._',
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+
       state = state.copyWith(
+        messages: [...state.messages, errorMessage],
         isLoading: false,
-        error: "Failed to get an answer from the AI. $e",
+        error: cleanError,
       );
     }
   }

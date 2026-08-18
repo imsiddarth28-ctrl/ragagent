@@ -56,7 +56,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: AppColors.backgroundLight,
       body: Center(
         child: AnimatedBuilder(
           animation: _controller,
@@ -79,9 +79,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
+                            color: AppColors.primary.withValues(alpha: 0.35),
                             blurRadius: 24,
-                            offset: const Offset(0, 12),
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
@@ -95,19 +95,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                     const Text(
                       'RAG Agent AI',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
+                        color: AppColors.textPrimaryLight,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.s),
-                    Text(
-                      'Intelligent Document Retrieval & Agent System',
+                    const Text(
+                      'Intelligent Document Retrieval & Multi-Tool Agent',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: AppColors.textSecondaryLight,
                         fontSize: 14,
-                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
