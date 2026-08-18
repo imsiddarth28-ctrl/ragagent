@@ -47,6 +47,20 @@ class RetrievalService:
                     "distance": round(distance, 4)
                 })
 
+        # Fallback: For broad summary questions where cosine similarity is diffuse,
+        # return the top available chunks so the AI has context to summarize the document.
+        if not filtered_results and len(ids) > 0:
+            for i in range(min(top_k, len(ids))):
+                metadata = metadatas[i]
+                filtered_results.append({
+                    "text": documents[i],
+                    "document_id": metadata.get("document_id"),
+                    "document_name": metadata.get("document_name"),
+                    "page_number": metadata.get("page_number") if metadata.get("page_number") != -1 else None,
+                    "chunk_index": metadata.get("chunk_index"),
+                    "distance": round(distances[i], 4)
+                })
+
         return {
             "query": query,
             "results": filtered_results

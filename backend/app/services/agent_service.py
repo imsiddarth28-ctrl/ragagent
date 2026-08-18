@@ -47,22 +47,31 @@ class AgentService:
         if conversation and conversation.documents:
             document_ids = [doc.id for doc in conversation.documents]
 
-        # Step 2: Vector Search Tool
-        logger.info(f"Agent searching documents with query: {question}")
+        # Step 2: Detect if query is a summary/overview request
+        lower_q = question.lower()
+        is_summary_query = any(k in lower_q for k in [
+            "summary", "summarize", "what is this", "what is the pdf", "what's the pdf", 
+            "what is the document", "about", "overview", "explain the file", "key points"
+        ])
+        
+        effective_top_k = max(top_k, 8) if is_summary_query else top_k
+
+        # Step 3: Vector Search Tool
+        logger.info(f"Agent searching documents with query: '{question}', top_k: {effective_top_k}")
         search_results = await RetrievalService.search(
             query=question, 
-            top_k=top_k, 
+            top_k=effective_top_k, 
             threshold=threshold,
             document_ids=document_ids
         )
         chunks = search_results.get("results", [])
 
-        # Step 3: Context Assembly & Citations
+        # Step 4: Context Assembly & Citations
         sources = []
         context_blocks = []
 
         for i, chunk in enumerate(chunks):
-            doc_name = chunk.get("document_name", "Unknown Document")
+            doc_name = chunk.get("document_name", "Document")
             page_num = chunk.get("page_number")
             page_str = f", Page {page_num}" if page_num is not None else ""
             
@@ -74,31 +83,34 @@ class AgentService:
                 "document_id": chunk.get("document_id"),
                 "document_name": doc_name,
                 "page_number": page_num,
-                "snippet": chunk.get("text", "")[:300], # Snippet preview
+                "snippet": chunk.get("text", "")[:300],
                 "score": chunk.get("distance", 0.0)
             })
 
         has_context = len(context_blocks) > 0
         context_text = "\n\n".join(context_blocks) if has_context else "No relevant document chunks found."
 
-        # Step 4: Multi-turn Conversation Memory
+        # Step 5: Multi-turn Conversation Memory
         history_msgs = ConversationService.get_recent_messages(db, conversation_id, limit=6)
         history = [
             {"role": m.role, "content": m.content} 
             for m in reversed(history_msgs)
         ]
 
-        # System prompt with strict source citation rules
-        agent_system_prompt = f"""You are an advanced RAG AI Assistant. Your task is to provide accurate, concise, and helpful answers based on the user's uploaded documents.
+        # System prompt with structured summarization & grounding
+        agent_system_prompt = f"""You are an advanced RAG AI Assistant. Your goal is to provide accurate, comprehensive, and helpful answers based on the user's uploaded documents.
 
 CONTEXT FROM DOCUMENTS:
 {context_text}
 
 INSTRUCTIONS:
-1. Base your answer primarily on the provided document context above.
-2. Cite the source document names and page numbers whenever referencing specific facts (e.g. "[Doc: filename.pdf, p.2]").
-3. If the context does not contain sufficient information to answer the question, clearly state: "Based on your uploaded documents, I do not have enough information to answer this question."
-4. Be polite, professional, well-structured, and use Markdown formatting for readability.
+1. Base your answer directly on the provided document context above.
+2. If the user asks for a summary, overview, or explanation of the PDF/document (e.g. "what is the pdf about", "summarize"), provide a well-structured response with:
+   - **Executive Summary / Purpose**: High-level overview of what the document covers.
+   - **Key Highlights / Main Topics**: Bulleted list of crucial points, findings, or sections.
+   - **Conclusion / Takeaways**: Core message or action points.
+3. Cite source document names and page numbers whenever referencing facts (e.g. "[Doc: filename.pdf, p.2]").
+4. Use clean Markdown formatting with headings and bullet points for readability.
 """
 
         # Step 5: LLM Execution
