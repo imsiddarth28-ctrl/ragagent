@@ -83,7 +83,6 @@ class ChatHistoryScreen extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.s),
       child: Material(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppRadius.l),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.l),
           side: const BorderSide(color: AppColors.borderLight),

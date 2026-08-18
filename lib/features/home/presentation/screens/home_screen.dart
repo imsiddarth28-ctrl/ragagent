@@ -328,7 +328,6 @@ class HomeScreen extends ConsumerWidget {
     return Expanded(
       child: Material(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppRadius.l),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.l),
           side: const BorderSide(color: AppColors.borderLight),

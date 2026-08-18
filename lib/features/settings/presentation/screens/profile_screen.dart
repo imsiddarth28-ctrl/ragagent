@@ -127,7 +127,6 @@ class ProfileScreen extends ConsumerWidget {
             // Appearance Tile
             Material(
               color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(AppRadius.l),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.l),
                 side: BorderSide(color: isDark ? Colors.white10 : AppColors.borderLight),
@@ -147,7 +146,6 @@ class ProfileScreen extends ConsumerWidget {
 
             Material(
               color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(AppRadius.l),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.l),
                 side: BorderSide(color: isDark ? Colors.white10 : AppColors.borderLight),

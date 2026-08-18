@@ -75,7 +75,6 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   Widget _buildUploadArea() {
     return Material(
       color: AppColors.surfaceLight,
-      borderRadius: BorderRadius.circular(AppRadius.xl),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl),
         side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),

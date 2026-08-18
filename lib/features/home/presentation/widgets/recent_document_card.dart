@@ -17,7 +17,6 @@ class RecentDocumentCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.s),
       child: Material(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppRadius.l),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.l),
           side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),

@@ -36,7 +36,6 @@ class SourceCard extends StatelessWidget {
 
     return Material(
       color: bgColor,
-      borderRadius: BorderRadius.circular(AppRadius.s),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.s),
         side: BorderSide(color: borderColor),
