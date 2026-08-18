@@ -58,11 +58,10 @@ class SettingsScreen extends ConsumerWidget {
                   return const Text('No AI providers found.', style: TextStyle(color: AppColors.textSecondaryLight));
                 }
                 
-                if (aiSettings.selectedProvider == null) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    ref.read(aiSettingsProvider.notifier).setProvider(providers.first.id);
-                  });
-                }
+                final currentProvider = (aiSettings.selectedProvider != null &&
+                        providers.any((p) => p.id == aiSettings.selectedProvider))
+                    ? aiSettings.selectedProvider!
+                    : providers.first.id;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,9 +69,8 @@ class SettingsScreen extends ConsumerWidget {
                     const Text('Select Provider', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
                     const SizedBox(height: AppSpacing.s),
                     DropdownButtonFormField<String>(
-                      initialValue: providers.any((p) => p.id == aiSettings.selectedProvider) 
-                          ? aiSettings.selectedProvider 
-                          : null,
+                      key: ValueKey('provider_$currentProvider'),
+                      initialValue: currentProvider,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
@@ -86,46 +84,41 @@ class SettingsScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.m),
                     const Text('Select Model', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
                     const SizedBox(height: AppSpacing.s),
-                    if (aiSettings.selectedProvider != null)
-                      ref.watch(modelsProvider(aiSettings.selectedProvider!)).when(
-                        data: (models) {
-                          if (models.isEmpty) return const Text('No models found.');
-                          
-                          if (aiSettings.selectedModel == null) {
-                             WidgetsBinding.instance.addPostFrameCallback((_) {
-                               ref.read(aiSettingsProvider.notifier).setModel(models.first.id);
-                             });
-                          }
+                    ref.watch(modelsProvider(currentProvider)).when(
+                      data: (models) {
+                        if (models.isEmpty) return const Text('No models found.');
+                        
+                        final currentModel = (aiSettings.selectedModel != null &&
+                                models.any((m) => m.id == aiSettings.selectedModel))
+                            ? aiSettings.selectedModel!
+                            : models.first.id;
 
-                          return DropdownButtonFormField<String>(
-                            initialValue: models.any((m) => m.id == aiSettings.selectedModel)
-                                ? aiSettings.selectedModel
-                                : null,
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
-                            ),
-                            items: models.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
-                            onChanged: (val) {
-                              if (val != null) ref.read(aiSettingsProvider.notifier).setModel(val);
-                            },
-                          );
-                        },
-                        loading: () => const Center(child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.m),
-                          child: CircularProgressIndicator(color: AppColors.primary),
-                        )),
-                        error: (err, stack) => Text('Error loading models: $err', style: const TextStyle(color: AppColors.error)),
-                      ),
+                        return DropdownButtonFormField<String>(
+                          key: ValueKey('model_${currentProvider}_$currentModel'),
+                          initialValue: currentModel,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
+                          ),
+                          items: models.map((m) => DropdownMenuItem(value: m.id, child: Text(m.name))).toList(),
+                          onChanged: (val) {
+                            if (val != null) ref.read(aiSettingsProvider.notifier).setModel(val);
+                          },
+                        );
+                      },
+                      loading: () => const Center(child: Padding(
+                        padding: EdgeInsets.all(AppSpacing.m),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      )),
+                      error: (err, stack) => Text('Error loading models: $err', style: const TextStyle(color: AppColors.error)),
+                    ),
                     
                     const SizedBox(height: AppSpacing.m),
                     const Text('API Key', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
                     const SizedBox(height: AppSpacing.s),
                     TextFormField(
-                      key: ValueKey(aiSettings.selectedProvider), 
-                      initialValue: aiSettings.selectedProvider != null 
-                          ? aiSettings.apiKeys[aiSettings.selectedProvider!] ?? ''
-                          : '',
+                      key: ValueKey('apikey_$currentProvider'), 
+                      initialValue: aiSettings.apiKeys[currentProvider] ?? '',
                       obscureText: !isApiKeyVisible,
                       decoration: InputDecoration(
                         hintText: 'Enter API key',
@@ -139,9 +132,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       onChanged: (val) {
-                        if (aiSettings.selectedProvider != null) {
-                          ref.read(aiSettingsProvider.notifier).setApiKey(aiSettings.selectedProvider!, val);
-                        }
+                        ref.read(aiSettingsProvider.notifier).setApiKey(currentProvider, val);
                       },
                     ),
                     const SizedBox(height: AppSpacing.m),
