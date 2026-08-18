@@ -13,8 +13,12 @@ router = APIRouter(
 
 @router.post("/register", response_model=TokenResponse)
 def register(request: UserRegister, db: Session = Depends(get_db)):
-    # Check if user with this email already exists
-    existing = db.query(User).filter(User.email == request.email.lower().strip()).first()
+    try:
+        existing = db.query(User).filter(User.email == request.email.lower().strip()).first()
+    except Exception:
+        db.rollback()
+        existing = db.query(User).filter(User.email == request.email.lower().strip()).first()
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -29,16 +33,27 @@ def register(request: UserRegister, db: Session = Depends(get_db)):
         hashed_password=hash_password(request.password),
         auth_provider="email",
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
     token = create_access_token({"sub": user.id, "email": user.email})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
 
 @router.post("/login", response_model=TokenResponse)
 def login(request: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == request.email.lower().strip()).first()
+    try:
+        user = db.query(User).filter(User.email == request.email.lower().strip()).first()
+    except Exception:
+        db.rollback()
+        user = db.query(User).filter(User.email == request.email.lower().strip()).first()
+
     if not user or not user.hashed_password or not verify_password(request.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,7 +66,11 @@ def login(request: UserLogin, db: Session = Depends(get_db)):
 @router.post("/google", response_model=TokenResponse)
 def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
     email = request.email.lower().strip()
-    user = db.query(User).filter(User.email == email).first()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+    except Exception:
+        db.rollback()
+        user = db.query(User).filter(User.email == email).first()
 
     if not user:
         # Create user through Google
@@ -62,15 +81,26 @@ def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
             avatar_url=request.avatar_url,
             auth_provider="google",
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        try:
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except Exception:
+            db.rollback()
+            db.add(user)
+            db.commit()
+            db.refresh(user)
     else:
         # Update profile avatar/name if changed
         if request.avatar_url and not user.avatar_url:
             user.avatar_url = request.avatar_url
-            db.commit()
-            db.refresh(user)
+            try:
+                db.commit()
+                db.refresh(user)
+            except Exception:
+                db.rollback()
+                db.commit()
+                db.refresh(user)
 
     token = create_access_token({"sub": user.id, "email": user.email})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
