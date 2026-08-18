@@ -218,6 +218,15 @@ class SettingsScreen extends ConsumerWidget {
             ),
             _buildSettingItem(Icons.auto_awesome_mosaic_outlined, 'Response Style', () {}, trailing: 'Accurate & Concise'),
             _buildTopKSelector(context, ref, aiSettings.topK),
+            SwitchListTile(
+              secondary: const Icon(Icons.public_rounded, color: AppColors.primary, size: 22),
+              title: const Text('Live Web Search Fallback', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+              subtitle: const Text('Auto-search live web when documents lack answers', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+              value: aiSettings.allowWebSearch,
+              onChanged: (val) {
+                ref.read(aiSettingsProvider.notifier).setAllowWebSearch(val);
+              },
+            ),
           ]),
           
           _buildSection('Knowledge Base'),

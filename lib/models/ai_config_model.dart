@@ -31,12 +31,14 @@ class AISettings {
   final String? selectedModel;
   final Map<String, String> apiKeys;
   final int topK;
+  final bool allowWebSearch;
 
   AISettings({
     this.selectedProvider,
     this.selectedModel,
     required this.apiKeys,
     this.topK = 4,
+    this.allowWebSearch = true,
   });
 
   AISettings copyWith({
@@ -44,12 +46,14 @@ class AISettings {
     String? selectedModel,
     Map<String, String>? apiKeys,
     int? topK,
+    bool? allowWebSearch,
   }) {
     return AISettings(
       selectedProvider: selectedProvider ?? this.selectedProvider,
       selectedModel: selectedModel ?? this.selectedModel,
       apiKeys: apiKeys ?? this.apiKeys,
       topK: topK ?? this.topK,
+      allowWebSearch: allowWebSearch ?? this.allowWebSearch,
     );
   }
 }

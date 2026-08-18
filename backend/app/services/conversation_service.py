@@ -106,6 +106,9 @@ class ConversationService:
                     db_src = MessageSource(
                         message_id=message.id,
                         document_id=src.get("document_id"),
+                        source_type=src.get("source_type", "document"),
+                        url=src.get("url"),
+                        title=src.get("title"),
                         chunk_id=src.get("chunk_id"),
                         page_number=src.get("page_number"),
                         snippet=src.get("snippet", ""),

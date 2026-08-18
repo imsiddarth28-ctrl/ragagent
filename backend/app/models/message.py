@@ -30,6 +30,9 @@ class MessageSource(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     message_id: Mapped[str] = mapped_column(String, ForeignKey("messages.id", ondelete="CASCADE"), index=True)
     document_id: Mapped[Optional[str]] = mapped_column(String, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+    source_type: Mapped[str] = mapped_column(String, default="document") # "document" or "web"
+    url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     chunk_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     page_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     snippet: Mapped[str] = mapped_column(Text, nullable=False)

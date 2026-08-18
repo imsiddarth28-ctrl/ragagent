@@ -211,5 +211,8 @@ class DocumentService:
         return [{"page": 1, "text": text}], 1
 
     @classmethod
-    def get_all_documents(cls, db: Session) -> List[Document]:
-        return db.query(Document).order_by(Document.created_at.desc()).all()
+    def get_all_documents(cls, db: Session, source_type: Optional[str] = None) -> List[Document]:
+        query = db.query(Document)
+        if source_type:
+            query = query.filter(Document.source_type == source_type)
+        return query.order_by(Document.created_at.desc()).all()

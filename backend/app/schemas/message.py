@@ -11,6 +11,9 @@ class MessageRole(str, Enum):
 class MessageSourceBase(BaseModel):
     document_id: Optional[str] = None
     document_name: Optional[str] = None
+    source_type: Optional[str] = "document"
+    url: Optional[str] = None
+    title: Optional[str] = None
     chunk_id: Optional[str] = None
     page_number: Optional[int] = None
     snippet: str

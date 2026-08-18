@@ -46,10 +46,22 @@ class SecureStorageService {
     return keys;
   }
 
+  Future<void> saveAllowWebSearch(bool allowed, {String? userId}) async {
+    final key = 'ai_web_search_${_userScope(userId)}';
+    await _storage.write(key: key, value: allowed.toString());
+  }
+
+  Future<bool> getAllowWebSearch({String? userId}) async {
+    final key = 'ai_web_search_${_userScope(userId)}';
+    final val = await _storage.read(key: key);
+    return val == null ? true : val == 'true';
+  }
+
   Future<void> clearUserData(String? userId) async {
     final scope = _userScope(userId);
     await _storage.delete(key: 'ai_provider_$scope');
     await _storage.delete(key: 'ai_model_$scope');
+    await _storage.delete(key: 'ai_web_search_$scope');
     for (var provider in ['google', 'openai', 'anthropic', 'groq']) {
       await _storage.delete(key: 'api_key_${scope}_$provider');
     }

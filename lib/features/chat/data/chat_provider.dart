@@ -147,6 +147,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         model: model,
         apiKey: apiKey,
         topK: settings.topK,
+        allowWebSearch: settings.allowWebSearch,
       );
 
       state = state.copyWith(

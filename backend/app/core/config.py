@@ -31,6 +31,13 @@ class Settings:
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
     SUPABASE_BUCKET: str = "documents"
 
+    # Web Search & Auto-Learning Configuration
+    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+    ENABLE_WEB_SEARCH: bool = True
+    WEB_SEARCH_CONFIDENCE_THRESHOLD: float = 0.85 # If vector distance > 0.85 (low similarity), trigger web search
+    MAX_DAILY_WEB_SEARCHES: int = 50
+    WEB_DEDUPE_TTL_DAYS: int = 7
+
     def validate_supabase(self):
         if not self.SUPABASE_URL or not self.SUPABASE_KEY:
             print("❌ ERROR: SUPABASE_URL or SUPABASE_KEY is not set in environment variables.")

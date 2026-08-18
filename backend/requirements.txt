@@ -16,11 +16,14 @@ sentence-transformers==3.0.1
 vecs==0.4.3
 supabase==2.4.5
 
-# AI Providers
+# AI Providers & Web Search
 openai
 anthropic
 google-generativeai
 groq
+tavily-python
+duckduckgo-search
+httpx
 
 # CPU-only PyTorch optimization
 --extra-index-url https://download.pytorch.org/whl/cpu

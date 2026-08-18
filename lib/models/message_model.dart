@@ -30,18 +30,30 @@ class Source {
   final String documentName;
   final int page;
   final String snippet;
+  final String sourceType; // 'document' or 'web'
+  final String? url;
+  final String? title;
 
   Source({
     required this.documentName,
     required this.page,
     required this.snippet,
+    this.sourceType = 'document',
+    this.url,
+    this.title,
   });
 
+  bool get isWeb => sourceType == 'web' || url != null;
+
   factory Source.fromJson(Map<String, dynamic> json) {
+    final srcType = json['source_type'] ?? (json['url'] != null ? 'web' : 'document');
     return Source(
-      documentName: json['document_name'] ?? 'Unknown',
+      documentName: json['document_name'] ?? json['title'] ?? (srcType == 'web' ? 'Web Source' : 'Unknown'),
       page: json['page_number'] ?? 1,
       snippet: json['snippet'] ?? json['text'] ?? '',
+      sourceType: srcType,
+      url: json['url'],
+      title: json['title'] ?? json['document_name'],
     );
   }
 }

@@ -14,7 +14,7 @@ class DocumentsScreen extends ConsumerStatefulWidget {
 
 class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   String selectedFilter = 'All';
-  final List<String> filters = ['All', 'PDFs', 'Text', 'Recent'];
+  final List<String> filters = ['All', 'PDFs', 'Text', 'Web Knowledge', 'Recent'];
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +140,9 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
 
   List<Document> _filterDocs(List<Document> docs) {
     if (selectedFilter == 'All') return docs;
-    if (selectedFilter == 'PDFs') return docs.where((d) => d.type.toLowerCase() == 'pdf').toList();
-    if (selectedFilter == 'Text') return docs.where((d) => d.type.toLowerCase() == 'txt' || d.type.toLowerCase() == 'docx').toList();
+    if (selectedFilter == 'Web Knowledge') return docs.where((d) => d.isWeb || d.type.toLowerCase() == 'web').toList();
+    if (selectedFilter == 'PDFs') return docs.where((d) => !d.isWeb && d.type.toLowerCase() == 'pdf').toList();
+    if (selectedFilter == 'Text') return docs.where((d) => !d.isWeb && (d.type.toLowerCase() == 'txt' || d.type.toLowerCase() == 'docx')).toList();
     if (selectedFilter == 'Recent') {
       final sorted = List<Document>.from(docs);
       sorted.sort((a, b) => b.uploadDate.compareTo(a.uploadDate));

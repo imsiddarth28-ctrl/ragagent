@@ -34,11 +34,13 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
     final provider = await _storage.getSelectedProvider(userId: _currentUserId);
     final model = await _storage.getSelectedModel(userId: _currentUserId);
     final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic', 'groq'], userId: _currentUserId);
+    final webSearch = await _storage.getAllowWebSearch(userId: _currentUserId);
     
     state = state.copyWith(
       selectedProvider: provider,
       selectedModel: model,
       apiKeys: savedKeys,
+      allowWebSearch: webSearch,
     );
   }
 
@@ -71,6 +73,11 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
 
   void setTopK(int val) {
     state = state.copyWith(topK: val);
+  }
+
+  void setAllowWebSearch(bool val) {
+    state = state.copyWith(allowWebSearch: val);
+    _storage.saveAllowWebSearch(val, userId: _currentUserId);
   }
 
   void reload() {

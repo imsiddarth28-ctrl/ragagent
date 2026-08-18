@@ -22,9 +22,11 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     
     return doc_info
 
+from typing import Optional
+
 @router.get("/")
-def get_documents(db: Session = Depends(get_db)):
-    return DocumentService.get_all_documents(db)
+def get_documents(source_type: Optional[str] = None, db: Session = Depends(get_db)):
+    return DocumentService.get_all_documents(db, source_type=source_type)
 
 @router.get("/{doc_id}")
 def get_document(doc_id: str, db: Session = Depends(get_db)):

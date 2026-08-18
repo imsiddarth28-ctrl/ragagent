@@ -71,6 +71,9 @@ class RecentDocumentCard extends StatelessWidget {
 }
 
   IconData _getFileIcon() {
+    if (document.isWeb || document.type.toLowerCase() == 'web') {
+      return Icons.public_rounded;
+    }
     switch (document.type.toLowerCase()) {
       case 'pdf':
         return Icons.picture_as_pdf_rounded;
@@ -82,6 +85,9 @@ class RecentDocumentCard extends StatelessWidget {
   }
 
   Color _getFileColor() {
+    if (document.isWeb || document.type.toLowerCase() == 'web') {
+      return const Color(0xFF059669); // Emerald 600
+    }
     switch (document.type.toLowerCase()) {
       case 'pdf':
         return const Color(0xFFEF4444); // Red 500

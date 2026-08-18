@@ -240,9 +240,12 @@ class ApiService {
     }
   }
 
-  Future<List<Document>> getDocuments() async {
+  Future<List<Document>> getDocuments({String? sourceType}) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/documents/'), headers: _headers());
+      final uri = sourceType != null 
+          ? Uri.parse('$_baseUrl/documents/?source_type=$sourceType')
+          : Uri.parse('$_baseUrl/documents/');
+      final response = await http.get(uri, headers: _headers());
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((item) => Document.fromJson(item)).toList();
@@ -383,6 +386,7 @@ class ApiService {
     required String model,
     required String apiKey,
     int topK = 4,
+    bool allowWebSearch = true,
   }) async {
     try {
       final response = await http.post(
@@ -394,6 +398,7 @@ class ApiService {
           'model': model,
           'api_key': apiKey,
           'top_k': topK,
+          'allow_web_search': allowWebSearch,
         }),
       );
 

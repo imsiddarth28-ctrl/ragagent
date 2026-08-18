@@ -19,6 +19,7 @@ class AskRequest(BaseModel):
     model: str
     api_key: str
     top_k: Optional[int] = 4
+    allow_web_search: Optional[bool] = True
 
 @router.post("/{conversation_id}/ask", response_model=Message)
 async def ask_question(conversation_id: str, request: AskRequest, db: Session = Depends(get_db)):
@@ -29,7 +30,8 @@ async def ask_question(conversation_id: str, request: AskRequest, db: Session = 
         provider=request.provider,
         model=request.model,
         api_key=request.api_key,
-        top_k=request.top_k
+        top_k=request.top_k,
+        allow_web_search=request.allow_web_search if request.allow_web_search is not None else True
     )
 
 @router.post("/", response_model=Conversation)

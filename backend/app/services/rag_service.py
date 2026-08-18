@@ -11,7 +11,8 @@ class RAGService:
         provider: str,
         model: str,
         api_key: str,
-        top_k: int = 5
+        top_k: int = 5,
+        allow_web_search: bool = True
     ):
         """
         Delegates question answering to the comprehensive Agent Service pipeline.
@@ -23,5 +24,6 @@ class RAGService:
             provider=provider,
             model=model,
             api_key=api_key,
-            top_k=top_k
+            top_k=top_k,
+            allow_web_search=allow_web_search
         )
