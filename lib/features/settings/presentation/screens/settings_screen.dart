@@ -62,7 +62,9 @@ class SettingsScreen extends ConsumerWidget {
                     const Text('Select Provider', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                     const SizedBox(height: AppSpacing.s),
                     DropdownButtonFormField<String>(
-                      initialValue: aiSettings.selectedProvider,
+                      value: providers.any((p) => p.id == aiSettings.selectedProvider) 
+                          ? aiSettings.selectedProvider 
+                          : null,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
@@ -89,7 +91,9 @@ class SettingsScreen extends ConsumerWidget {
                           }
 
                           return DropdownButtonFormField<String>(
-                            initialValue: aiSettings.selectedModel,
+                            value: models.any((m) => m.id == aiSettings.selectedModel)
+                                ? aiSettings.selectedModel
+                                : null,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
