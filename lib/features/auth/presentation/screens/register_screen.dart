@@ -5,52 +5,59 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../data/auth_provider.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   String? _localError;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleSignIn() async {
+  void _handleSignUp() async {
     setState(() => _localError = null);
+
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      setState(() => _localError = "Please enter both email and password.");
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _localError = "Please fill in all fields.");
       return;
     }
 
-    final success = await ref.read(authProvider.notifier).signIn(email, password);
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
+    if (!RegExp(r"^[\w\.-]+@[\w\.-]+\.\w+$").hasMatch(email)) {
+      setState(() => _localError = "Please enter a valid email address.");
+      return;
     }
-  }
 
-  void _handleGoogleSignIn() async {
-    setState(() => _localError = null);
-    final success = await ref.read(authProvider.notifier).signInWithGoogle();
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
+    if (password.length < 6) {
+      setState(() => _localError = "Password must be at least 6 characters.");
+      return;
     }
-  }
 
-  void _handleGuestSignIn() async {
-    await ref.read(authProvider.notifier).signInAsGuest();
-    if (mounted) {
+    if (password != confirmPassword) {
+      setState(() => _localError = "Passwords do not match.");
+      return;
+    }
+
+    final success = await ref.read(authProvider.notifier).signUp(name, email, password);
+    if (success && mounted) {
       Navigator.of(context).pushReplacementNamed('/home');
     }
   }
@@ -62,17 +69,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final displayError = _localError ?? authState.error;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l, vertical: AppSpacing.xl),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l, vertical: AppSpacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: AppSpacing.l),
-              // Glowing Brand Logo
+              // Logo Header
               Container(
-                width: 84,
-                height: 84,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryDark],
@@ -82,17 +96,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   borderRadius: BorderRadius.circular(AppRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: const Icon(Icons.psychology_rounded, size: 44, color: Colors.white),
+                child: const Icon(Icons.person_add_alt_1_rounded, size: 36, color: Colors.white),
               ),
               const SizedBox(height: AppSpacing.l),
               Text(
-                'RAG Agent AI',
+                'Create Account',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -100,13 +114,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Intelligent Document Retrieval & Multi-Tool Agent',
+                'Join RAG Agent to index & chat with your documents',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.xl),
 
               if (displayError != null) ...[
                 Container(
@@ -133,6 +147,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ],
 
               AppTextField(
+                controller: _nameController,
+                hintText: 'Full Name',
+                prefixIcon: Icons.person_outline_rounded,
+              ),
+              const SizedBox(height: AppSpacing.m),
+
+              AppTextField(
                 controller: _emailController,
                 hintText: 'Email address',
                 prefixIcon: Icons.email_outlined,
@@ -142,70 +163,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               AppTextField(
                 controller: _passwordController,
-                hintText: 'Password',
+                hintText: 'Password (min. 6 characters)',
                 prefixIcon: Icons.lock_outline_rounded,
                 isPassword: true,
               ),
-              const SizedBox(height: AppSpacing.s),
+              const SizedBox(height: AppSpacing.m),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Password reset link sent to your registered email."),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Forgot password?',
-                    style: TextStyle(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
+              AppTextField(
+                controller: _confirmPasswordController,
+                hintText: 'Confirm Password',
+                prefixIcon: Icons.lock_reset_rounded,
+                isPassword: true,
               ),
-              const SizedBox(height: AppSpacing.s),
+              const SizedBox(height: AppSpacing.l),
 
               AppButton(
-                text: authState.isLoading ? 'Signing In...' : 'Sign In',
+                text: authState.isLoading ? 'Creating Account...' : 'Sign Up',
                 isLoading: authState.isLoading,
-                onPressed: authState.isLoading ? () {} : _handleSignIn,
+                onPressed: authState.isLoading ? () {} : _handleSignUp,
               ),
-              const SizedBox(height: AppSpacing.m),
+              const SizedBox(height: AppSpacing.l),
+
+              // Divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.grey.shade300)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.m),
+                    child: Text('OR', style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, fontSize: 12)),
+                  ),
+                  Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.grey.shade300)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.l),
 
               // Google Sign In
               OutlinedButton.icon(
-                onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                onPressed: authState.isLoading ? null : () async {
+                  final success = await ref.read(authProvider.notifier).signInWithGoogle();
+                  if (success && context.mounted) {
+                    Navigator.of(context).pushReplacementNamed('/home');
+                  }
+                },
                 icon: const Icon(Icons.g_mobiledata_rounded, size: 26, color: AppColors.primary),
-                label: const Text('Sign in with Google', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: const Text('Sign up with Google', style: TextStyle(fontWeight: FontWeight.w600)),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 54),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.m)),
                   side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
                 ),
               ),
-              const SizedBox(height: AppSpacing.m),
-
-              AppButton(
-                text: 'Continue as Guest',
-                isSecondary: true,
-                onPressed: _handleGuestSignIn,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.xl),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account?", style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
+                  Text("Already have an account?", style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/register');
-                    },
-                    child: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                   ),
                 ],
               ),

@@ -9,21 +9,19 @@ class RetrievalService:
         cls, 
         query: str, 
         top_k: int = settings.DEFAULT_TOP_K,
-        threshold: float = settings.DEFAULT_RELEVANCE_THRESHOLD
+        threshold: float = settings.DEFAULT_RELEVANCE_THRESHOLD,
+        document_ids: Optional[List[str]] = None
     ) -> Dict:
         """
         Embeds the query and performs a similarity search in the vector store.
         Filters results by a distance threshold.
         """
         # 1. Embed query
-        # EmbeddingService.generate_embeddings expects a list of DocumentChunks or texts.
-        # Let's check its implementation.
-        
         model = EmbeddingService.get_model()
         query_embedding = model.encode([query], show_progress_bar=False)[0].tolist()
 
         # 2. Query Vector Store
-        raw_results = await VectorStoreService.query(query_embedding, top_k=top_k)
+        raw_results = await VectorStoreService.query(query_embedding, top_k=top_k, document_ids=document_ids)
 
         # 3. Process and filter results
         # Results are formatted as lists of lists for batch query compatibility.

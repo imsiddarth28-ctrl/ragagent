@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../models/document_model.dart';
@@ -10,6 +11,24 @@ class DocumentDetailsScreen extends ConsumerWidget {
   final Document document;
 
   const DocumentDetailsScreen({super.key, required this.document});
+
+  void _openDocument(BuildContext context) async {
+    if (document.storagePath == null) return;
+    
+    // Construct Supabase Public URL
+    // Format: https://[PROJECT_ID].supabase.co/storage/v1/object/public/[BUCKET_NAME]/[FILE_PATH]
+    final url = Uri.parse('https://iivghqjrwmxzwjudhbnv.supabase.co/storage/v1/object/public/documents/${document.storagePath}');
+    
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open document URL'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref) {
     showDialog(
@@ -133,7 +152,7 @@ class DocumentDetailsScreen extends ConsumerWidget {
               text: 'Open Document',
               isSecondary: true,
               icon: Icons.open_in_new_rounded,
-              onPressed: () {},
+              onPressed: () => _openDocument(context),
             ),
           ],
         ),

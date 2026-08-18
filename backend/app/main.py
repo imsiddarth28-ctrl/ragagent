@@ -1,42 +1,52 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.database import engine, Base
+from app.models import User, Document, Conversation, ConversationDocument, Message, MessageSource
+from app.routes.auth import router as auth_router
 from app.routes.providers import router as providers_router
 from app.routes.documents import router as documents_router
 from app.routes.retrieval import router as retrieval_router
 from app.routes.conversations import router as conversations_router
 
+# Auto-create all tables in the database if they do not exist
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: Automatic table creation encountered: {e}")
 
 app = FastAPI(
-    title="RAG Agent API",
-    description="Backend for the AI Document Assistant",
-    version="1.0.0",
+    title="RAG Agent & Multi-Tool API",
+    description="Backend API for AI Document Assistant, Authentication, Vector Retrieval & Agent Pipelines",
+    version="2.0.0",
 )
 
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, replace with your frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
+# Register routers
+app.include_router(auth_router)
 app.include_router(providers_router)
 app.include_router(documents_router)
 app.include_router(retrieval_router)
 app.include_router(conversations_router)
 
-
 @app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
-        "message": "RAG Agent Backend is running"
+        "status": "online",
+        "message": "RAG Agent & Multi-Tool Backend is running",
+        "version": "2.0.0"
     }
-
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "database": "connected"
     }

@@ -3,7 +3,6 @@ import '../../../models/ai_config_model.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/secure_storage_service.dart';
 
-final apiServiceProvider = Provider((ref) => ApiService());
 final secureStorageProvider = Provider((ref) => SecureStorageService());
 
 class AISettingsNotifier extends StateNotifier<AISettings> {

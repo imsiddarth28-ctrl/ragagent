@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../models/document_model.dart';
 import '../../../core/services/api_service.dart';
-import '../../settings/data/ai_settings_provider.dart';
 
 class DocumentListNotifier extends StateNotifier<AsyncValue<List<Document>>> {
   final ApiService _apiService;

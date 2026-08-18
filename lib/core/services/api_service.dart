@@ -1,25 +1,157 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:typed_data';
 import '../../models/ai_config_model.dart';
 import '../../models/document_model.dart';
 import '../../models/message_model.dart';
 import '../../models/conversation_model.dart';
+import '../../models/user_model.dart';
 
 class ApiService {
   // Production Render URL
   static const String _prodUrl = 'https://ragagent-9b88.onrender.com';
-  static const String _localUrl = 'http://127.0.0.1:8000';
+  static const String _localUrl = 'http://10.0.2.2:8000'; // Standard Android emulator loopback
 
-  // Set to true for production deployment
+  // Set to true for live cloud backend
   static const bool _useProd = true; 
 
   String get _baseUrl => _useProd ? _prodUrl : _localUrl;
+  String? _authToken;
+
+  void setAuthToken(String? token) {
+    _authToken = token;
+  }
+
+  Map<String, String> _headers({bool isJson = true}) {
+    final headers = <String, String>{};
+    if (isJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (_authToken != null && _authToken!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $_authToken';
+    }
+    return headers;
+  }
+
+  // ==================== AUTHENTICATION ====================
+
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/register'),
+        headers: _headers(),
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        _authToken = data['access_token'];
+        return {
+          'token': data['access_token'],
+          'user': UserModel.fromJson(data['user']),
+        };
+      } else {
+        throw Exception(data['detail'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      throw Exception('Auth error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/login'),
+        headers: _headers(),
+        body: json.encode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        _authToken = data['access_token'];
+        return {
+          'token': data['access_token'],
+          'user': UserModel.fromJson(data['user']),
+        };
+      } else {
+        throw Exception(data['detail'] ?? 'Invalid credentials');
+      }
+    } catch (e) {
+      throw Exception('Login error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> googleAuth({
+    required String email,
+    required String name,
+    String? avatarUrl,
+    String? idToken,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/google'),
+        headers: _headers(),
+        body: json.encode({
+          'email': email,
+          'name': name,
+          'avatar_url': avatarUrl,
+          'id_token': idToken,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        _authToken = data['access_token'];
+        return {
+          'token': data['access_token'],
+          'user': UserModel.fromJson(data['user']),
+        };
+      } else {
+        throw Exception(data['detail'] ?? 'Google authentication failed');
+      }
+    } catch (e) {
+      throw Exception('Google Sign In error: $e');
+    }
+  }
+
+  Future<UserModel> getMe() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/auth/me'),
+        headers: _headers(),
+      );
+
+      if (response.statusCode == 200) {
+        return UserModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception('Session expired');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch user profile: $e');
+    }
+  }
+
+  // ==================== AI PROVIDERS ====================
 
   Future<List<AIProviderModel>> getProviders() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/providers/'));
+      final response = await http.get(Uri.parse('$_baseUrl/providers/'), headers: _headers());
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => AIProviderModel.fromJson(json)).toList();
@@ -33,7 +165,7 @@ class ApiService {
 
   Future<List<AIModel>> getModels(String providerId) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/providers/$providerId/models'));
+      final response = await http.get(Uri.parse('$_baseUrl/providers/$providerId/models'), headers: _headers());
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => AIModel.fromJson(json)).toList();
@@ -53,7 +185,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/providers/test-connection'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers(),
         body: json.encode({
           'provider': providerId,
           'model': modelId,
@@ -77,9 +209,14 @@ class ApiService {
     }
   }
 
+  // ==================== DOCUMENTS ====================
+
   Future<Document> uploadDocument(PlatformFile file) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/documents/upload'));
+      if (_authToken != null && _authToken!.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
       
       final Uint8List fileBytes = await file.readAsBytes();
       
@@ -105,7 +242,7 @@ class ApiService {
 
   Future<List<Document>> getDocuments() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/documents/'));
+      final response = await http.get(Uri.parse('$_baseUrl/documents/'), headers: _headers());
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((item) => Document.fromJson(item)).toList();
@@ -119,7 +256,7 @@ class ApiService {
 
   Future<void> deleteDocument(String id) async {
     try {
-      final response = await http.delete(Uri.parse('$_baseUrl/documents/$id'));
+      final response = await http.delete(Uri.parse('$_baseUrl/documents/$id'), headers: _headers());
       if (response.statusCode != 200) {
         throw Exception('Failed to delete document');
       }
@@ -128,13 +265,13 @@ class ApiService {
     }
   }
 
-
+  // ==================== RETRIEVAL & SEARCH ====================
 
   Future<List<Source>> search(String query, {int topK = 4}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/retrieval/search'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers(),
         body: json.encode({
           'query': query,
           'top_k': topK,
@@ -143,7 +280,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> results = data['results'];
+        final List<dynamic> results = data['results'] ?? [];
         return results.map((res) => Source.fromJson({
           ...res,
           'snippet': res['text'] ?? res['snippet'] ?? '',
@@ -156,12 +293,13 @@ class ApiService {
     }
   }
 
-  // Conversation Methods
+  // ==================== CONVERSATIONS & RAG AGENT ====================
+
   Future<Conversation> createConversation(String title, {List<String>? documentIds}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/conversations/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers(),
         body: json.encode({
           'title': title,
           'document_ids': documentIds,
@@ -181,7 +319,7 @@ class ApiService {
 
   Future<List<Conversation>> getConversations() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/conversations/'));
+      final response = await http.get(Uri.parse('$_baseUrl/conversations/'), headers: _headers());
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((item) => Conversation.fromJson(item)).toList();
@@ -195,7 +333,7 @@ class ApiService {
 
   Future<Conversation> getConversation(String id) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/conversations/$id'));
+      final response = await http.get(Uri.parse('$_baseUrl/conversations/$id'), headers: _headers());
       if (response.statusCode == 200) {
         return Conversation.fromJson(json.decode(response.body));
       } else {
@@ -210,7 +348,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/conversations/$conversationId/messages'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers(),
         body: json.encode({
           'role': role,
           'content': content,
@@ -229,7 +367,7 @@ class ApiService {
 
   Future<void> deleteConversation(String id) async {
     try {
-      final response = await http.delete(Uri.parse('$_baseUrl/conversations/$id'));
+      final response = await http.delete(Uri.parse('$_baseUrl/conversations/$id'), headers: _headers());
       if (response.statusCode != 200) {
         throw Exception('Failed to delete conversation');
       }
@@ -249,7 +387,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/conversations/$conversationId/ask'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers(),
         body: json.encode({
           'question': question,
           'provider': provider,
@@ -266,9 +404,11 @@ class ApiService {
         throw Exception(error);
       }
     } catch (e) {
-      throw Exception('RAG error: $e');
+      throw Exception('RAG Agent error: $e');
     }
   }
-
-
 }
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService();
+});

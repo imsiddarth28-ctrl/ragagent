@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../models/conversation_model.dart';
+import '../../../../models/document_model.dart';
 import '../../data/chat_provider.dart';
 import '../widgets/chat_bubble.dart';
 
@@ -21,10 +22,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final chat = ModalRoute.of(context)?.settings.arguments as Conversation?;
-      if (chat != null) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Conversation) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(chatProvider.notifier).setConversationId(chat.id);
+          ref.read(chatProvider.notifier).setConversationId(args.id);
+        });
+      } else if (args is Document) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(chatProvider.notifier).setInitialDocument(args.id);
+        });
+      } else {
+        // New fresh chat
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(chatProvider.notifier).clearChat();
         });
       }
       _initialized = true;

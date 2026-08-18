@@ -1,3 +1,5 @@
+import asyncio
+import asyncio
 from typing import List, Dict
 from sentence_transformers import SentenceTransformer
 from app.core.config import settings
@@ -22,11 +24,13 @@ class EmbeddingService:
         if not chunks:
             return []
 
-        model = cls.get_model()
-        texts = [chunk.text for chunk in chunks]
-        
-        # Batch inference
-        embeddings = model.encode(texts, show_progress_bar=False)
+        def run_encoding():
+            model = cls.get_model()
+            texts = [chunk.text for chunk in chunks]
+            return model.encode(texts, show_progress_bar=False)
+
+        # Run blocking encoding in a separate thread
+        embeddings = await asyncio.to_thread(run_encoding)
         
         result = []
         for i, chunk in enumerate(chunks):

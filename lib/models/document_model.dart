@@ -8,6 +8,7 @@ class Document {
   final DateTime uploadDate;
   final int? pages;
   final DocumentStatus status;
+  final String? storagePath;
 
   Document({
     required this.id,
@@ -17,6 +18,7 @@ class Document {
     required this.uploadDate,
     this.pages,
     required this.status,
+    this.storagePath,
   });
 
   factory Document.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class Document {
           : DateTime.now(),
       pages: json['page_count'] ?? json['pages'],
       status: _parseStatus(json['status']),
+      storagePath: json['storage_path'],
     );
   }
 

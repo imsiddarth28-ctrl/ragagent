@@ -5,7 +5,6 @@ import '../../../../models/conversation_model.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/conversation_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 
 class ChatHistoryScreen extends ConsumerWidget {
   const ChatHistoryScreen({super.key});
@@ -62,7 +61,7 @@ class ChatHistoryScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          ref.read(navigationIndexProvider.notifier).state = 2; // Go to chat tab
+          Navigator.of(context).pushNamed('/chat');
         },
         label: const Text('New Chat'),
         icon: const Icon(Icons.add_rounded),
@@ -77,9 +76,7 @@ class ChatHistoryScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.m),
       child: InkWell(
         onTap: () {
-          ref.read(navigationIndexProvider.notifier).state = 2; // Switch to Chat tab
-          // We would also need to tell the ChatNotifier to load this specific conversation
-          // but for now, switching tabs is a good start.
+          Navigator.of(context).pushNamed('/chat', arguments: chat);
         },
         borderRadius: BorderRadius.circular(AppRadius.l),
         child: Padding(

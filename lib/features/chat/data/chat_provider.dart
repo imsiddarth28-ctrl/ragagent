@@ -41,10 +41,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
   ]));
 
   String? _conversationId;
+  List<String>? _selectedDocumentIds;
 
   void setConversationId(String id) {
     _conversationId = id;
+    _selectedDocumentIds = null;
     _loadMessages();
+  }
+
+  void setInitialDocument(String docId) {
+    _conversationId = null;
+    _selectedDocumentIds = [docId];
+    state = state.copyWith(messages: []);
   }
 
   Future<void> _loadMessages() async {
@@ -82,7 +90,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     // 2. Initialize conversation if needed
     try {
       if (_conversationId == null) {
-        final conv = await _apiService.createConversation("New Chat ${DateTime.now().hour}:${DateTime.now().minute}");
+        final title = text.length > 20 ? "${text.substring(0, 20)}..." : text;
+        final conv = await _apiService.createConversation(
+          title, 
+          documentIds: _selectedDocumentIds,
+        );
         _conversationId = conv.id;
       }
     } catch (e) {
@@ -129,7 +141,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void clearChat() {
     _conversationId = null;
-    state = ChatState(messages: []);
+    _selectedDocumentIds = null;
+    state = ChatState(messages: [
+      Message(
+        id: 'welcome',
+        text: 'Hello! I can help you find information in your documents. What would you like to know?',
+        isUser: false,
+        timestamp: DateTime.now(),
+      ),
+    ]);
   }
 }
 

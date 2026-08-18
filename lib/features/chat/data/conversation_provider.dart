@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/conversation_model.dart';
-import '../../settings/data/ai_settings_provider.dart';
+import '../../../core/services/api_service.dart';
 
 class ConversationListNotifier extends AutoDisposeAsyncNotifier<List<Conversation>> {
   @override

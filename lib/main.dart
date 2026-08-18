@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 import 'features/documents/presentation/screens/documents_screen.dart';
 import 'features/documents/presentation/screens/upload_document_screen.dart';
@@ -15,6 +17,7 @@ import 'models/document_model.dart';
 import 'core/providers/navigation_provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
       child: RAGAgentApp(),
@@ -22,21 +25,24 @@ void main() {
   );
 }
 
-class RAGAgentApp extends StatelessWidget {
+class RAGAgentApp extends ConsumerWidget {
   const RAGAgentApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
-      title: 'RAG Agent',
+      title: 'RAG Agent AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/home': (context) => const MainNavigationShell(),
         '/upload': (context) => const UploadDocumentScreen(),
         '/chat': (context) => const ChatScreen(),
@@ -71,9 +77,9 @@ class MainNavigationShell extends ConsumerWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
-              offset: const Offset(0, -5),
+              offset: const Offset(0, -3),
             ),
           ],
         ),
@@ -84,7 +90,7 @@ class MainNavigationShell extends ConsumerWidget {
           },
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Theme.of(context).primaryColor,
-          unselectedItemColor: Colors.grey.shade400,
+          unselectedItemColor: Colors.grey.shade500,
           showUnselectedLabels: true,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),

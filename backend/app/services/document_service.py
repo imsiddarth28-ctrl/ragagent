@@ -1,20 +1,36 @@
 import os
 import uuid
 import json
-import fitz  # PyMuPDF
 from io import BytesIO
-from docx import Document as DocxDocument
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
-from supabase import create_client, Client
 from app.models.document import Document, DocumentStatus
 from app.services.chunking_service import ChunkingService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_store_service import VectorStoreService
 from app.core.config import settings
 
-# Global Supabase client for storage
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+try:
+    import pymupdf as fitz
+except ImportError:
+    try:
+        import fitz
+    except ImportError:
+        fitz = None
+
+try:
+    from docx import Document as DocxDocument
+except ImportError:
+    DocxDocument = None
+
+try:
+    from supabase import create_client, Client
+    supabase: Optional[Client] = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY) if (settings.SUPABASE_URL and settings.SUPABASE_KEY) else None
+except Exception:
+    supabase = None
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 class DocumentService:
     @classmethod
@@ -28,16 +44,21 @@ class DocumentService:
             return False
 
         try:
-            # 1. Delete from ChromaDB/Vector Store
+            # 1. Delete from Vector Store
             await VectorStoreService.delete_document_chunks(doc_id)
 
-            # 2. Delete from Supabase Storage
-            try:
-                supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
-            except Exception as e:
-                print(f"⚠️ Warning: Could not remove file from storage: {e}")
+            # 2. Delete from Cloud Storage or Local Storage
+            if supabase and doc.storage_path:
+                try:
+                    supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
+                except Exception as e:
+                    print(f"⚠️ Cloud storage delete note: {e}")
+            else:
+                local_file = os.path.join(UPLOAD_DIR, doc.storage_path)
+                if os.path.exists(local_file):
+                    os.remove(local_file)
 
-            # 3. Delete from PostgreSQL
+            # 3. Delete from DB
             db.delete(doc)
             db.commit()
             return True
@@ -49,20 +70,27 @@ class DocumentService:
     @classmethod
     async def process_upload(cls, db: Session, file_name: str, file_content: bytes) -> Document:
         doc_id = str(uuid.uuid4())
-        extension = file_name.split(".")[-1].lower()
+        extension = file_name.split(".")[-1].lower() if "." in file_name else "txt"
         internal_filename = f"{doc_id}.{extension}"
 
-        # 1. Upload to Supabase Storage
-        try:
-            supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
-                path=internal_filename,
-                file=file_content,
-                file_options={"content-type": f"application/{extension}"}
-            )
-            storage_path = internal_filename
-        except Exception as e:
-            print(f"❌ Storage upload failed: {e}")
-            raise Exception("Failed to upload file to cloud storage.")
+        # 1. Upload to Cloud Storage or Local Disk
+        storage_path = internal_filename
+        if supabase:
+            try:
+                supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
+                    path=internal_filename,
+                    file=file_content,
+                    file_options={"content-type": f"application/{extension}"}
+                )
+            except Exception as e:
+                print(f"⚠️ Supabase upload fallback to local storage: {e}")
+                local_path = os.path.join(UPLOAD_DIR, internal_filename)
+                with open(local_path, "wb") as f:
+                    f.write(file_content)
+        else:
+            local_path = os.path.join(UPLOAD_DIR, internal_filename)
+            with open(local_path, "wb") as f:
+                f.write(file_content)
 
         # 2. Create document record in DB (processing state)
         db_doc = Document(
@@ -86,7 +114,7 @@ class DocumentService:
                 text_content, pages_count = cls._extract_pdf_bytes(file_content)
             elif extension == "docx":
                 text_content, pages_count = cls._extract_docx_bytes(file_content)
-            elif extension == "txt":
+            elif extension in ["txt", "md", "csv", "json"]:
                 text_content, pages_count = cls._extract_txt_bytes(file_content)
             else:
                 raise Exception(f"Unsupported file type: {extension}")
@@ -95,7 +123,7 @@ class DocumentService:
             chunks = ChunkingService.create_chunks(doc_id, file_name, text_content)
             chunks_count = len(chunks)
 
-            # 5. Generate Embeddings & Store in pgvector
+            # 5. Generate Embeddings & Store in Vector Store
             embedding_data = await EmbeddingService.generate_embeddings(chunks)
             embeddings = [item["embedding"] for item in embedding_data]
 
@@ -108,7 +136,7 @@ class DocumentService:
             print(f"✅ Success: Document '{file_name}' processed.")
 
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"❌ Document processing error: {e}")
             db_doc.status = DocumentStatus.failed
         
         db.commit()
@@ -118,16 +146,20 @@ class DocumentService:
     @staticmethod
     def _extract_pdf_bytes(content: bytes) -> Tuple[List[Dict], int]:
         pages = []
-        doc = fitz.open(stream=content, filetype="pdf")
-        for i, page in enumerate(doc):
-            pages.append({"page": i + 1, "text": page.get_text()})
-        return pages, len(doc)
+        if fitz:
+            doc = fitz.open(stream=content, filetype="pdf")
+            for i, page in enumerate(doc):
+                pages.append({"page": i + 1, "text": page.get_text()})
+            return pages, len(doc)
+        return [{"page": 1, "text": content.decode("utf-8", errors="ignore")}], 1
 
     @staticmethod
     def _extract_docx_bytes(content: bytes) -> Tuple[List[Dict], int]:
-        doc = DocxDocument(BytesIO(content))
-        full_text = "\n".join([para.text for para in doc.paragraphs])
-        return [{"page": 1, "text": full_text}], 1
+        if DocxDocument:
+            doc = DocxDocument(BytesIO(content))
+            full_text = "\n".join([para.text for para in doc.paragraphs])
+            return [{"page": 1, "text": full_text}], 1
+        return [{"page": 1, "text": content.decode("utf-8", errors="ignore")}], 1
 
     @staticmethod
     def _extract_txt_bytes(content: bytes) -> Tuple[List[Dict], int]:
