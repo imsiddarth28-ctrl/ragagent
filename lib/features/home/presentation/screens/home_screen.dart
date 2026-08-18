@@ -326,33 +326,36 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildQuickAction(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppRadius.l),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.m, horizontal: AppSpacing.m),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(AppRadius.l),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.m),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.l),
+          side: const BorderSide(color: AppColors.borderLight),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.m, horizontal: AppSpacing.m),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.m),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: AppSpacing.s),
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimaryLight),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.s),
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimaryLight),
+                ),
+              ],
+            ),
           ),
         ),
       ),

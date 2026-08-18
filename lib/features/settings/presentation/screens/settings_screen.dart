@@ -281,12 +281,14 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildCardGroup(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+    return Material(
+      color: AppColors.surfaceLight,
+      borderRadius: BorderRadius.circular(AppRadius.l),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.l),
-        border: Border.all(color: AppColors.borderLight),
+        side: const BorderSide(color: AppColors.borderLight),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: children,
       ),

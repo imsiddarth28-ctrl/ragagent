@@ -79,19 +79,21 @@ class ChatHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildChatCard(BuildContext context, WidgetRef ref, Conversation chat) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s),
+      child: Material(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppRadius.l),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).pushNamed('/chat', arguments: chat);
-        },
-        borderRadius: BorderRadius.circular(AppRadius.l),
-        child: Padding(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.l),
+          side: const BorderSide(color: AppColors.borderLight),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).pushNamed('/chat', arguments: chat);
+          },
+          child: Padding(
           padding: const EdgeInsets.all(AppSpacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,8 +160,9 @@ class ChatHistoryScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildEmptyState() {
     return Center(

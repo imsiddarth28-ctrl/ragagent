@@ -73,20 +73,22 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   }
 
   Widget _buildUploadArea() {
-    return InkWell(
-      onTap: _pickAndUpload,
+    return Material(
+      color: AppColors.surfaceLight,
       borderRadius: BorderRadius.circular(AppRadius.xl),
-      child: Container(
-        width: double.infinity,
-        height: 300,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _pickAndUpload,
+        child: SizedBox(
+          width: double.infinity,
+          height: 300,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.l),
               decoration: const BoxDecoration(
@@ -108,8 +110,9 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildProcessingState() {
     return Container(

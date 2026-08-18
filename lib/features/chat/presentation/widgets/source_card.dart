@@ -9,30 +9,33 @@ class SourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
+    return Material(
+      color: AppColors.primaryTint,
       borderRadius: BorderRadius.circular(AppRadius.s),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.primaryTint,
-          borderRadius: BorderRadius.circular(AppRadius.s),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.description_rounded, size: 14, color: AppColors.primary),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                '${source.documentName} • p.${source.page}',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.s),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {},
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.description_rounded, size: 14, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${source.documentName} • p.${source.page}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

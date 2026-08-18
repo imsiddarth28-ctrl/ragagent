@@ -125,12 +125,14 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xl),
             
             // Appearance Tile
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            Material(
+              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(AppRadius.l),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.l),
-                border: Border.all(color: isDark ? Colors.white10 : AppColors.borderLight),
+                side: BorderSide(color: isDark ? Colors.white10 : AppColors.borderLight),
               ),
+              clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
                 secondary: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: AppColors.primary),
                 title: const Text('Dark Mode', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
@@ -143,16 +145,22 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.m),
 
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            Material(
+              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(AppRadius.l),
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.l),
-                border: Border.all(color: isDark ? Colors.white10 : AppColors.borderLight),
+                side: BorderSide(color: isDark ? Colors.white10 : AppColors.borderLight),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   _buildActionTile(Icons.key_rounded, 'AI Provider & API Keys', () {
-                    Navigator.of(context).pushNamed('/settings');
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      ref.read(navigationIndexProvider.notifier).state = 3;
+                    }
                   }, isDark),
                   const Divider(height: 1, indent: 56, endIndent: 16),
                   _buildActionTile(Icons.security_rounded, 'Privacy & Cloud Storage', () {

@@ -13,14 +13,17 @@ class RecentDocumentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s),
+      child: Material(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(AppRadius.l),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-      ),
-      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.l),
+          side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 4),
         onTap: () => Navigator.of(context).pushNamed('/document-details', arguments: document),
         leading: Container(
@@ -63,8 +66,9 @@ class RecentDocumentCard extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMutedLight),
       ),
-    );
-  }
+    ),
+  );
+}
 
   IconData _getFileIcon() {
     switch (document.type.toLowerCase()) {
