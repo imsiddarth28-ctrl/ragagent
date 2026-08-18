@@ -18,15 +18,15 @@ class Conversation {
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
-    final messages = (json['messages'] as List?)
+    final List<Message> messages = (json['messages'] as List?)
             ?.map((m) => Message.fromJson(m))
-            .toList() ??
-        [];
+            .toList() ?? [];
+            
     return Conversation(
       id: json['id'],
-      title: json['title'] ?? '',
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+      title: json['title'],
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at']) 
           : DateTime.now(),
       lastMessage: messages.isNotEmpty ? messages.last.text : '',
       messages: messages,

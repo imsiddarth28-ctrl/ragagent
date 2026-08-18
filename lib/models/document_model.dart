@@ -19,35 +19,31 @@ class Document {
     required this.status,
   });
 
-  static DocumentStatus _parseStatus(String? status) {
-    switch (status) {
-      case 'ready':
-        return DocumentStatus.ready;
-      case 'failed':
-        return DocumentStatus.failed;
-      default:
-        return DocumentStatus.processing;
-    }
-  }
-
-  static String _formatSize(dynamic bytes) {
-    final int b = bytes is int ? bytes : 0;
-    if (b < 1024) return '$b B';
-    if (b < 1024 * 1024) return '${(b / 1024).toStringAsFixed(1)} KB';
-    return '${(b / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   factory Document.fromJson(Map<String, dynamic> json) {
     return Document(
       id: json['id'],
       name: json['name'],
       type: json['file_type'] ?? json['type'] ?? '',
       size: _formatSize(json['file_size'] ?? json['size'] ?? 0),
-      uploadDate: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+      uploadDate: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
       pages: json['page_count'] ?? json['pages'],
       status: _parseStatus(json['status']),
     );
+  }
+
+  static DocumentStatus _parseStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'ready': return DocumentStatus.ready;
+      case 'failed': return DocumentStatus.failed;
+      default: return DocumentStatus.processing;
+    }
+  }
+
+  static String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

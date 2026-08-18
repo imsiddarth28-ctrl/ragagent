@@ -17,14 +17,11 @@ class Message {
     return Message(
       id: json['id'],
       text: json['content'] ?? json['text'] ?? '',
-      isUser: json['role'] == 'user',
-      timestamp: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+      isUser: json['role'] == 'user' || (json['isUser'] ?? false),
+      timestamp: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
-      sources: (json['sources'] as List?)
-              ?.map((s) => Source.fromJson(s))
-              .toList() ??
-          [],
+      sources: (json['sources'] as List?)?.map((s) => Source.fromJson(s)).toList(),
     );
   }
 }
@@ -44,7 +41,7 @@ class Source {
     return Source(
       documentName: json['document_name'] ?? 'Unknown',
       page: json['page_number'] ?? 1,
-      snippet: json['snippet'] ?? '',
+      snippet: json['snippet'] ?? json['text'] ?? '',
     );
   }
 }

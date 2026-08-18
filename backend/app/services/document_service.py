@@ -2,40 +2,50 @@ import os
 import uuid
 import json
 import fitz  # PyMuPDF
+from io import BytesIO
 from docx import Document as DocxDocument
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
+from supabase import create_client, Client
 from app.models.document import Document, DocumentStatus
 from app.services.chunking_service import ChunkingService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_store_service import VectorStoreService
-
-UPLOAD_DIR = "uploads"
-EXTRACTED_DIR = "extracted_text"
-CHUNKS_DIR = "chunks"
-
-# Ensure directories exist
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(EXTRACTED_DIR, exist_ok=True)
-os.makedirs(CHUNKS_DIR, exist_ok=True)
-
-try:
-    from supabase import create_client, Client
-except ImportError:
-    create_client = None
-    Client = None
-
 from app.core.config import settings
 
-_supabase_client = None
-
-def get_supabase_client():
-    global _supabase_client
-    if _supabase_client is None and settings.SUPABASE_URL and settings.SUPABASE_KEY and create_client is not None:
-        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-    return _supabase_client
+# Global Supabase client for storage
+supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 class DocumentService:
+    @classmethod
+    def get_document(cls, db: Session, doc_id: str) -> Optional[Document]:
+        return db.query(Document).filter(Document.id == doc_id).first()
+
+    @classmethod
+    async def delete_document(cls, db: Session, doc_id: str) -> bool:
+        doc = cls.get_document(db, doc_id)
+        if not doc:
+            return False
+
+        try:
+            # 1. Delete from ChromaDB/Vector Store
+            await VectorStoreService.delete_document_chunks(doc_id)
+
+            # 2. Delete from Supabase Storage
+            try:
+                supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
+            except Exception as e:
+                print(f"⚠️ Warning: Could not remove file from storage: {e}")
+
+            # 3. Delete from PostgreSQL
+            db.delete(doc)
+            db.commit()
+            return True
+        except Exception as e:
+            print(f"❌ Error deleting document {doc_id}: {e}")
+            db.rollback()
+            return False
+
     @classmethod
     async def process_upload(cls, db: Session, file_name: str, file_content: bytes) -> Document:
         doc_id = str(uuid.uuid4())
@@ -43,22 +53,16 @@ class DocumentService:
         internal_filename = f"{doc_id}.{extension}"
 
         # 1. Upload to Supabase Storage
-        supabase = get_supabase_client()
-        if supabase:
-            try:
-                supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
-                    path=internal_filename,
-                    file=file_content,
-                    file_options={"content-type": f"application/{extension}"}
-                )
-                storage_path = internal_filename
-            except Exception as e:
-                print(f"❌ Storage upload failed: {e}")
-                raise Exception("Failed to upload file to cloud storage.")
-        else:
-            storage_path = os.path.join(UPLOAD_DIR, internal_filename)
-            with open(storage_path, "wb") as f:
-                f.write(file_content)
+        try:
+            supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
+                path=internal_filename,
+                file=file_content,
+                file_options={"content-type": f"application/{extension}"}
+            )
+            storage_path = internal_filename
+        except Exception as e:
+            print(f"❌ Storage upload failed: {e}")
+            raise Exception("Failed to upload file to cloud storage.")
 
         # 2. Create document record in DB (processing state)
         db_doc = Document(
@@ -73,7 +77,7 @@ class DocumentService:
         db.commit()
         db.refresh(db_doc)
 
-        # 3. Extract text (We process the bytes directly since they are already in memory)
+        # 3. Extract text
         text_content = []
         pages_count = 0
         
@@ -121,7 +125,6 @@ class DocumentService:
 
     @staticmethod
     def _extract_docx_bytes(content: bytes) -> Tuple[List[Dict], int]:
-        from io import BytesIO
         doc = DocxDocument(BytesIO(content))
         full_text = "\n".join([para.text for para in doc.paragraphs])
         return [{"page": 1, "text": full_text}], 1
@@ -134,36 +137,3 @@ class DocumentService:
     @classmethod
     def get_all_documents(cls, db: Session) -> List[Document]:
         return db.query(Document).order_by(Document.created_at.desc()).all()
-
-    @classmethod
-    def get_document(cls, db: Session, doc_id: str) -> Optional[Document]:
-        return db.query(Document).filter(Document.id == doc_id).first()
-
-    @classmethod
-    async def delete_document(cls, db: Session, doc_id: str) -> bool:
-        doc = cls.get_document(db, doc_id)
-        if not doc:
-            return False
-
-        try:
-            # 1. Delete from ChromaDB/Vector Store
-            await VectorStoreService.delete_document_chunks(doc_id)
-
-            # 2. Delete from Supabase Storage
-            try:
-                supabase = get_supabase_client()
-                if supabase:
-                    supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
-                elif os.path.exists(doc.storage_path):
-                    os.remove(doc.storage_path)
-            except Exception as e:
-                print(f"⚠️ Warning: Could not remove file from storage: {e}")
-
-            # 3. Delete from PostgreSQL
-            db.delete(doc)
-            db.commit()
-            return True
-        except Exception as e:
-            print(f"❌ Error deleting document {doc_id}: {e}")
-            db.rollback()
-            return False
