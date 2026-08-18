@@ -27,9 +27,13 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
     # Supabase Configuration (for Storage)
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://iivghqjrwmxzwjudhbnv.supabase.co")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
     SUPABASE_BUCKET: str = "documents"
+
+    def validate_supabase(self):
+        if not self.SUPABASE_URL or not self.SUPABASE_KEY:
+            print("❌ ERROR: SUPABASE_URL or SUPABASE_KEY is not set in environment variables.")
 
     # RAG System Prompt
     RAG_SYSTEM_PROMPT: str = """
