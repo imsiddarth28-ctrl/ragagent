@@ -28,7 +28,7 @@ class Document(Base):
     status: Mapped[DocumentStatus] = mapped_column(SQLEnum(DocumentStatus), default=DocumentStatus.processing)
     
     # Web Knowledge & Auto-Learning fields
-    source_type: Mapped[SourceType] = mapped_column(SQLEnum(SourceType), default=SourceType.upload, index=True)
+    source_type: Mapped[SourceType] = mapped_column(SQLEnum(SourceType, native_enum=False), default=SourceType.upload, index=True)
     url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     query_that_triggered_it: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     content_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
