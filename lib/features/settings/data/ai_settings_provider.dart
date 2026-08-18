@@ -24,7 +24,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
     
     // We'll load keys as they are needed or all at once if we have provider list
     // For now, let's just load the settings and any existing keys for known providers
-    final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic']);
+    final savedKeys = await _storage.getAllApiKeys(['google', 'openai', 'anthropic', 'groq']);
     
     state = state.copyWith(
       selectedProvider: provider,

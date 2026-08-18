@@ -27,6 +27,10 @@ def get_providers():
             "id": "anthropic",
             "name": "Anthropic",
         },
+        {
+            "id": "groq",
+            "name": "Groq",
+        },
     ]
 
 
@@ -47,6 +51,13 @@ def get_provider_models(provider_id: str):
             {"id": "claude-3-5-sonnet", "name": "Claude 3.5 Sonnet"},
             {"id": "claude-3-opus", "name": "Claude 3 Opus"},
             {"id": "claude-3-haiku", "name": "Claude 3 Haiku"},
+        ],
+        "groq": [
+            {"id": "llama3-70b-8192", "name": "Llama 3 70B"},
+            {"id": "llama3-8b-8192", "name": "Llama 3 8B"},
+            {"id": "mixtral-8x7b-32768", "name": "Mixtral 8x7B"},
+            {"id": "gemma2-9b-it", "name": "Gemma 2 9B"},
+            {"id": "openai/gpt-oss-120b", "name": "GPT OSS 120B"},
         ],
     }
     return models.get(provider_id, [])

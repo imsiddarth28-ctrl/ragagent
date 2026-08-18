@@ -1,6 +1,7 @@
 import openai
 import google.generativeai as genai
 import anthropic
+import groq
 from app.core.config import settings
 from typing import List, Dict
 
@@ -23,8 +24,26 @@ class LLMService:
             return await LLMService._call_openai(model, api_key, system_prompt, user_message, history)
         elif provider == "anthropic":
             return await LLMService._call_anthropic(model, api_key, system_prompt, user_message, history)
+        elif provider == "groq":
+            return await LLMService._call_groq(model, api_key, system_prompt, user_message, history)
         else:
             raise ValueError(f"Unsupported provider: {provider}")
+
+    @staticmethod
+    async def _call_groq(model: str, api_key: str, system: str, message: str, history: List[Dict]) -> str:
+        client = groq.AsyncGroq(api_key=api_key)
+        messages = [{"role": "system", "content": system}]
+        if history:
+            for m in history:
+                messages.append({"role": m["role"], "content": m["content"]})
+        messages.append({"role": "user", "content": message})
+        
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.7
+        )
+        return response.choices[0].message.content
 
     @staticmethod
     async def _call_gemini(model: str, api_key: str, system: str, message: str, history: List[Dict]) -> str:

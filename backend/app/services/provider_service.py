@@ -1,6 +1,7 @@
 import openai
 import google.generativeai as genai
 import anthropic
+import groq
 import logging
 import asyncio
 
@@ -57,6 +58,20 @@ class ProviderService:
             logger.error(f"Anthropic connection test failed: {error_msg}")
             return False, f"Anthropic error: {error_msg}"
 
+    @staticmethod
+    async def test_groq(model: str, api_key: str):
+        try:
+            client = groq.AsyncGroq(api_key=api_key)
+            # Minimal check: list models
+            await client.models.list()
+            return True, "Connection successful: Groq reached."
+        except Exception as e:
+            error_msg = str(e)
+            if api_key in error_msg:
+                error_msg = error_msg.replace(api_key, "***")
+            logger.error(f"Groq connection test failed: {error_msg}")
+            return False, f"Groq error: {error_msg}"
+
     @classmethod
     async def validate_connection(cls, provider: str, model: str, api_key: str):
         if provider == "google":
@@ -65,5 +80,7 @@ class ProviderService:
             return await cls.test_openai(model, api_key)
         elif provider == "anthropic":
             return await cls.test_anthropic(model, api_key)
+        elif provider == "groq":
+            return await cls.test_groq(model, api_key)
         else:
             return False, f"Unsupported provider: {provider}"

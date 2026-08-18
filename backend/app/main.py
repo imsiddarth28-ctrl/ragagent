@@ -28,14 +28,14 @@ app.include_router(retrieval_router)
 app.include_router(conversations_router)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "message": "RAG Agent Backend is running"
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {
         "status": "healthy"
