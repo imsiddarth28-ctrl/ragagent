@@ -94,17 +94,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        return Document(
-          id: data['id'],
-          name: data['name'],
-          type: data['type'],
-          size: _formatSize(data['file_size'] ?? data['size'] ?? 0),
-          uploadDate: data['created_at'] != null 
-              ? DateTime.parse(data['created_at']) 
-              : DateTime.now(),
-          pages: data['page_count'] ?? data['pages'],
-          status: _parseStatus(data['status']),
-        );
+        return Document.fromJson(data);
       } else {
         throw Exception('Upload failed: ${response.statusCode}');
       }
@@ -118,17 +108,7 @@ class ApiService {
       final response = await http.get(Uri.parse('$_baseUrl/documents/'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => Document(
-          id: item['id'],
-          name: item['name'],
-          type: item['type'],
-          size: _formatSize(item['file_size'] ?? item['size'] ?? 0),
-          uploadDate: item['created_at'] != null 
-              ? DateTime.parse(item['created_at']) 
-              : DateTime.now(),
-          pages: item['page_count'] ?? item['pages'],
-          status: _parseStatus(item['status']),
-        )).toList();
+        return data.map((item) => Document.fromJson(item)).toList();
       } else {
         throw Exception('Failed to load documents');
       }
@@ -148,19 +128,7 @@ class ApiService {
     }
   }
 
-  DocumentStatus _parseStatus(String status) {
-    switch (status) {
-      case 'ready': return DocumentStatus.ready;
-      case 'failed': return DocumentStatus.failed;
-      default: return DocumentStatus.processing;
-    }
-  }
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 
   Future<List<Source>> search(String query, {int topK = 4}) async {
     try {
@@ -176,11 +144,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> results = data['results'];
-        return results.map((res) => Source(
-          documentName: res['document_name'] ?? 'Unknown',
-          page: res['page_number'] ?? 1,
-          snippet: res['text'],
-        )).toList();
+        return results.map((res) => Source.fromJson({
+          ...res,
+          'snippet': res['text'] ?? res['snippet'] ?? '',
+        })).toList();
       } else {
         throw Exception('Search failed: ${response.statusCode}');
       }
@@ -203,7 +170,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        return _parseConversation(data);
+        return Conversation.fromJson(data);
       } else {
         throw Exception('Failed to create conversation');
       }
@@ -217,7 +184,7 @@ class ApiService {
       final response = await http.get(Uri.parse('$_baseUrl/conversations/'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => _parseConversation(item)).toList();
+        return data.map((item) => Conversation.fromJson(item)).toList();
       } else {
         throw Exception('Failed to load conversations');
       }
@@ -230,7 +197,7 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/conversations/$id'));
       if (response.statusCode == 200) {
-        return _parseConversation(json.decode(response.body));
+        return Conversation.fromJson(json.decode(response.body));
       } else {
         throw Exception('Conversation not found');
       }
@@ -251,7 +218,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return _parseMessage(json.decode(response.body));
+        return Message.fromJson(json.decode(response.body));
       } else {
         throw Exception('Failed to send message');
       }
@@ -293,7 +260,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return _parseMessage(json.decode(response.body));
+        return Message.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body)['detail'] ?? 'Failed to generate answer';
         throw Exception(error);
@@ -303,27 +270,5 @@ class ApiService {
     }
   }
 
-  Conversation _parseConversation(Map<String, dynamic> data) {
-    return Conversation(
-      id: data['id'],
-      title: data['title'],
-      updatedAt: DateTime.parse(data['updated_at']),
-      lastMessage: '', // To be updated by caller or from nested data
-      messages: (data['messages'] as List?)?.map((m) => _parseMessage(m)).toList() ?? [],
-    );
-  }
 
-  Message _parseMessage(Map<String, dynamic> data) {
-    return Message(
-      id: data['id'],
-      text: data['content'],
-      isUser: data['role'] == 'user',
-      timestamp: DateTime.parse(data['created_at']),
-      sources: (data['sources'] as List?)?.map((s) => Source(
-        documentName: s['document_name'] ?? 'Unknown',
-        page: s['page_number'] ?? 1,
-        snippet: s['snippet'] ?? '',
-      )).toList() ?? [],
-    );
-  }
 }

@@ -46,5 +46,3 @@ class Settings:
     """
 
 settings = Settings()
-
-settings = Settings()

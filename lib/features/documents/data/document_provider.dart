@@ -34,7 +34,8 @@ class DocumentListNotifier extends StateNotifier<AsyncValue<List<Document>>> {
         state = AsyncValue.data(state.value!.where((d) => d.id != id).toList());
       }
     } catch (e, st) {
-      // Potentially handle error in UI
+      // Re-throw so the UI can show the error
+      state = AsyncValue.error('Failed to delete document: $e', st);
     }
   }
 }

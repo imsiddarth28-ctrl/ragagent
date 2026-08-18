@@ -1,4 +1,7 @@
-import vecs
+try:
+    import vecs
+except ImportError:
+    vecs = None
 from typing import List, Dict, Optional
 from app.core.config import settings
 from app.services.chunking_service import DocumentChunk

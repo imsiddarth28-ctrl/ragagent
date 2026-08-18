@@ -1,6 +1,4 @@
 from fastapi import FastAPI
-
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.providers import router as providers_router
 from app.routes.documents import router as documents_router

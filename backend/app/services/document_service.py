@@ -19,11 +19,21 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(EXTRACTED_DIR, exist_ok=True)
 os.makedirs(CHUNKS_DIR, exist_ok=True)
 
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = None
+
 from app.core.config import settings
 
-# Global Supabase client for storage
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+_supabase_client = None
+
+def get_supabase_client():
+    global _supabase_client
+    if _supabase_client is None and settings.SUPABASE_URL and settings.SUPABASE_KEY and create_client is not None:
+        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return _supabase_client
 
 class DocumentService:
     @classmethod
@@ -33,16 +43,22 @@ class DocumentService:
         internal_filename = f"{doc_id}.{extension}"
 
         # 1. Upload to Supabase Storage
-        try:
-            supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
-                path=internal_filename,
-                file=file_content,
-                file_options={"content-type": f"application/{extension}"}
-            )
-            storage_path = internal_filename
-        except Exception as e:
-            print(f"❌ Storage upload failed: {e}")
-            raise Exception("Failed to upload file to cloud storage.")
+        supabase = get_supabase_client()
+        if supabase:
+            try:
+                supabase.storage.from_(settings.SUPABASE_BUCKET).upload(
+                    path=internal_filename,
+                    file=file_content,
+                    file_options={"content-type": f"application/{extension}"}
+                )
+                storage_path = internal_filename
+            except Exception as e:
+                print(f"❌ Storage upload failed: {e}")
+                raise Exception("Failed to upload file to cloud storage.")
+        else:
+            storage_path = os.path.join(UPLOAD_DIR, internal_filename)
+            with open(storage_path, "wb") as f:
+                f.write(file_content)
 
         # 2. Create document record in DB (processing state)
         db_doc = Document(
@@ -135,7 +151,11 @@ class DocumentService:
 
             # 2. Delete from Supabase Storage
             try:
-                supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
+                supabase = get_supabase_client()
+                if supabase:
+                    supabase.storage.from_(settings.SUPABASE_BUCKET).remove([doc.storage_path])
+                elif os.path.exists(doc.storage_path):
+                    os.remove(doc.storage_path)
             except Exception as e:
                 print(f"⚠️ Warning: Could not remove file from storage: {e}")
 

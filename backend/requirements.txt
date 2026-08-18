@@ -14,3 +14,6 @@ sentence-transformers==3.0.1
 vecs==0.4.3
 supabase==2.4.5
 python-multipart==0.0.9
+openai
+anthropic
+google-generativeai

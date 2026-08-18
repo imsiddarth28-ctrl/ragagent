@@ -15,7 +15,8 @@ class ConversationListNotifier extends AutoDisposeAsyncNotifier<List<Conversatio
       await apiService.deleteConversation(id);
       ref.invalidateSelf(); // Refresh list
     } catch (e) {
-      // Handle error
+      // Refresh to restore the deleted item since it failed
+      ref.invalidateSelf();
     }
   }
 }

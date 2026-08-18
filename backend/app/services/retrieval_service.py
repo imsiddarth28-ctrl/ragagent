@@ -26,7 +26,7 @@ class RetrievalService:
         raw_results = await VectorStoreService.query(query_embedding, top_k=top_k)
 
         # 3. Process and filter results
-        # ChromaDB results are lists of lists because they support batch queries.
+        # Results are formatted as lists of lists for batch query compatibility.
         # We only have one query embedding.
         
         ids = raw_results.get("ids", [[]])[0]
@@ -38,8 +38,7 @@ class RetrievalService:
         for i in range(len(ids)):
             distance = distances[i]
             
-            # ChromaDB uses squared L2 distance by default.
-            # Lower distance means higher similarity.
+            # pgvector cosine distance: lower value = higher similarity.
             if distance <= threshold:
                 metadata = metadatas[i]
                 filtered_results.append({

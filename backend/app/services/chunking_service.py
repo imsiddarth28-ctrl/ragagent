@@ -50,14 +50,16 @@ class ChunkingService:
             
             # If we're not at the end of the text, try to find a better split point (like a newline or space)
             if end < text_len:
-                # Look for the last newline or space within the last 10% of the chunk to avoid mid-word splits
+                # Look for the last newline or space within search window to avoid mid-word splits
                 search_area = text[max(start, end - 100) : end]
                 best_break = -1
                 for sep in ["\n\n", "\n", " "]:
                     idx = search_area.rfind(sep)
                     if idx != -1:
-                        best_break = max(start, end - 100) + idx + len(sep)
-                        break
+                        candidate = max(start, end - 100) + idx + len(sep)
+                        if candidate > start:
+                            best_break = candidate
+                            break
                 
                 if best_break != -1:
                     end = best_break
@@ -66,12 +68,14 @@ class ChunkingService:
             if chunk:
                 chunks.append(chunk)
             
-            # Move start forward, but subtract overlap
-            start = end - chunk_overlap
+            if end >= text_len:
+                break
             
-            # Ensure we actually make progress to avoid infinite loop if overlap >= chunk_size
-            if start >= end:
-                start = end
+            # Move start forward, but subtract overlap
+            new_start = end - chunk_overlap
+            if new_start <= start:
+                new_start = end
+            start = new_start
 
         return chunks
 
