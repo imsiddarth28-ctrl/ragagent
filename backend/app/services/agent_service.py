@@ -119,28 +119,34 @@ class AgentService:
         sources = []
         context_blocks = []
 
-        # Add Document Context
-        for i, chunk in enumerate(doc_chunks):
-            doc_name = chunk.get("document_name", "Document")
-            page_num = chunk.get("page_number")
-            page_str = f", p.{page_num}" if page_num is not None else ""
-            
-            context_blocks.append(
-                f"[Document: {doc_name}{page_str}]\n{chunk.get('text', '').strip()}"
-            )
+        # Only add Document Context if relevant (has strong match or user asked about documents)
+        if has_strong_doc_matches or (doc_chunks and not web_results):
+            for i, chunk in enumerate(doc_chunks[:4]):
+                doc_name = chunk.get("document_name", "Document")
+                page_num = chunk.get("page_number")
+                page_str = f", p.{page_num}" if page_num is not None else ""
+                
+                context_blocks.append(
+                    f"[Document: {doc_name}{page_str}]\n{chunk.get('text', '').strip()}"
+                )
 
-            sources.append({
-                "source_type": "document",
-                "document_id": chunk.get("document_id"),
-                "document_name": doc_name,
-                "page_number": page_num,
-                "title": doc_name,
-                "snippet": chunk.get("text", "")[:300],
-                "score": chunk.get("distance", 0.0)
-            })
+                sources.append({
+                    "source_type": "document",
+                    "document_id": chunk.get("document_id"),
+                    "document_name": doc_name,
+                    "page_number": page_num,
+                    "title": doc_name,
+                    "snippet": chunk.get("text", "")[:300],
+                    "score": chunk.get("distance", 0.0)
+                })
 
-        # Add Web Context
+        # Add Web Context (Top 3 distinct results)
+        seen_urls = set()
         for i, res in enumerate(web_results):
+            if res.url in seen_urls:
+                continue
+            seen_urls.add(res.url)
+
             context_blocks.append(
                 f"[Web: {res.title} ({res.url})]\n{res.content.strip()}"
             )
@@ -154,31 +160,31 @@ class AgentService:
                 "snippet": res.content[:300],
                 "score": res.score
             })
+            if len(sources) >= 4:
+                break
 
         has_context = len(context_blocks) > 0
         context_text = "\n\n".join(context_blocks) if has_context else "No document or web information found."
 
         # Step 5: Multi-turn Memory
-        history_msgs = ConversationService.get_recent_messages(db, conversation_id, limit=6)
+        history_msgs = ConversationService.get_recent_messages(db, conversation_id, limit=4)
         history = [
             {"role": m.role, "content": m.content} 
             for m in reversed(history_msgs)
         ]
 
         # Construct Agent System Prompt
-        agent_system_prompt = f"""You are an advanced AI Research Assistant equipped with Document Retrieval and Live Web Search.
+        agent_system_prompt = f"""You are a smart, concise, and accurate AI Research Assistant.
 
 AVAILABLE CONTEXT:
 {context_text}
 
 INSTRUCTIONS:
-1. Answer the user's question accurately, clearly, and comprehensively using the context provided above.
-2. Clearly cite your sources where appropriate:
-   - For document info, reference: "[Document: filename, p.X]"
-   - For web info, reference: "[Web: Title, URL]"
-3. If documents and web results conflict, prefer the most relevant and up-to-date information.
-4. If neither the documents nor web search contain the answer, say "I don't have enough verified information to answer this question."
-5. Format your output with clean Markdown (bullet points, bold text, headings).
+1. Provide a direct, concise, and focused answer (2 to 4 sentences or brief bullet points).
+2. Avoid verbose preambles, redundant explanations, or conversational filler. Get straight to the answer.
+3. Only expand into longer sections if the user explicitly asks for a "summary", "detailed breakdown", or "essay".
+4. Briefly cite verified sources inline (e.g. "[Web: Name]" or "[Document: Name]").
+5. If the answer is not in the context, state clearly in one sentence that information is unavailable.
 """
 
         # Step 6: LLM Execution
