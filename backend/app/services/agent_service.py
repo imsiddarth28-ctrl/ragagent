@@ -66,6 +66,23 @@ class AgentService:
         )
         chunks = search_results.get("results", [])
 
+        # Fallback: If vector search returned 0 chunks, fetch the document chunks directly from DB!
+        if not chunks:
+            from app.models.document_chunk import DocumentChunkModel
+            query_filter = db.query(DocumentChunkModel)
+            if document_ids:
+                query_filter = query_filter.filter(DocumentChunkModel.document_id.in_(document_ids))
+            db_fallback_chunks = query_filter.order_by(DocumentChunkModel.chunk_index.asc()).limit(effective_top_k).all()
+            
+            for c in db_fallback_chunks:
+                chunks.append({
+                    "document_id": c.document_id,
+                    "document_name": c.document_name,
+                    "page_number": c.page_number,
+                    "text": c.text,
+                    "distance": 0.5
+                })
+
         # Step 4: Context Assembly & Citations
         sources = []
         context_blocks = []
@@ -88,7 +105,7 @@ class AgentService:
             })
 
         has_context = len(context_blocks) > 0
-        context_text = "\n\n".join(context_blocks) if has_context else "No relevant document chunks found."
+        context_text = "\n\n".join(context_blocks) if has_context else "No document text found in the database. Please upload a PDF first."
 
         # Step 5: Multi-turn Conversation Memory
         history_msgs = ConversationService.get_recent_messages(db, conversation_id, limit=6)

@@ -163,12 +163,39 @@ class DocumentService:
     @staticmethod
     def _extract_pdf_bytes(content: bytes) -> Tuple[List[Dict], int]:
         pages = []
+        # 1. Try PyMuPDF (fitz)
         if fitz:
-            doc = fitz.open(stream=content, filetype="pdf")
-            for i, page in enumerate(doc):
-                pages.append({"page": i + 1, "text": page.get_text()})
-            return pages, len(doc)
-        return [{"page": 1, "text": content.decode("utf-8", errors="ignore")}], 1
+            try:
+                doc = fitz.open(stream=content, filetype="pdf")
+                for i, page in enumerate(doc):
+                    txt = page.get_text().strip()
+                    if txt:
+                        pages.append({"page": i + 1, "text": txt})
+                if pages:
+                    return pages, len(doc)
+            except Exception as e:
+                print(f"⚠️ PyMuPDF parsing note: {e}")
+
+        # 2. Try pypdf fallback
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(BytesIO(content))
+            for i, page in enumerate(reader.pages):
+                txt = page.extract_text()
+                if txt and txt.strip():
+                    pages.append({"page": i + 1, "text": txt.strip()})
+            if pages:
+                return pages, len(reader.pages)
+        except Exception as e:
+            print(f"⚠️ pypdf parsing note: {e}")
+
+        # 3. Fallback: UTF-8 decode
+        if not pages:
+            raw_text = content.decode("utf-8", errors="ignore").strip()
+            if raw_text:
+                pages.append({"page": 1, "text": raw_text})
+
+        return pages, max(1, len(pages))
 
     @staticmethod
     def _extract_docx_bytes(content: bytes) -> Tuple[List[Dict], int]:

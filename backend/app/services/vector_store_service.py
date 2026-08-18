@@ -107,6 +107,14 @@ class VectorStoreService:
         """
         Performs a similarity search in Supabase pgvector or local vector store.
         """
+        formatted_results = {
+            "ids": [[]],
+            "documents": [[]],
+            "metadatas": [[]],
+            "distances": [[]]
+        }
+
+        # 1. Try pgvector collection if available
         collection = cls.get_collection()
         if collection:
             try:
@@ -122,24 +130,17 @@ class VectorStoreService:
                     include_metadata=True
                 )
 
-                formatted_results = {
-                    "ids": [[]],
-                    "documents": [[]],
-                    "metadatas": [[]],
-                    "distances": [[]]
-                }
-
-                for chunk_id, distance, metadata in results:
-                    formatted_results["ids"][0].append(chunk_id)
-                    formatted_results["documents"][0].append(metadata.get("text", ""))
-                    formatted_results["metadatas"][0].append(metadata)
-                    formatted_results["distances"][0].append(distance)
-
-                return formatted_results
+                if results and len(results) > 0:
+                    for chunk_id, distance, metadata in results:
+                        formatted_results["ids"][0].append(chunk_id)
+                        formatted_results["documents"][0].append(metadata.get("text", ""))
+                        formatted_results["metadatas"][0].append(metadata)
+                        formatted_results["distances"][0].append(distance)
+                    return formatted_results
             except Exception as e:
                 print(f"⚠️ pgvector query note, using local vector store: {e}")
 
-        # Database Chunk Fallback: Load persistent chunks from PostgreSQL if local store was reset
+        # 2. Database Chunk Fallback: Always read persistent chunks from PostgreSQL
         if not cls._local_store:
             from app.core.database import SessionLocal
             from app.models.document_chunk import DocumentChunkModel
