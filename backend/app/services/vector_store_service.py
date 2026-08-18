@@ -139,13 +139,31 @@ class VectorStoreService:
             except Exception as e:
                 print(f"⚠️ pgvector query note, using local vector store: {e}")
 
-        # Local Cosine Similarity query
-        formatted_results = {
-            "ids": [[]],
-            "documents": [[]],
-            "metadatas": [[]],
-            "distances": [[]]
-        }
+        # Database Chunk Fallback: Load persistent chunks from PostgreSQL if local store was reset
+        if not cls._local_store:
+            from app.core.database import SessionLocal
+            from app.models.document_chunk import DocumentChunkModel
+            db = SessionLocal()
+            try:
+                db_chunks = db.query(DocumentChunkModel).all()
+                for c in db_chunks:
+                    try:
+                        emb = np.array(json.loads(c.embedding_json), dtype=np.float32)
+                        cls._local_store[c.id] = {
+                            "chunk_id": c.id,
+                            "document_id": c.document_id,
+                            "document_name": c.document_name,
+                            "page_number": c.page_number if c.page_number is not None else -1,
+                            "chunk_index": c.chunk_index,
+                            "text": c.text,
+                            "embedding": emb
+                        }
+                    except Exception as e:
+                        print(f"Error loading chunk {c.id}: {e}")
+            except Exception as e:
+                print(f"Error reading document_chunks from DB: {e}")
+            finally:
+                db.close()
 
         if not cls._local_store:
             return formatted_results

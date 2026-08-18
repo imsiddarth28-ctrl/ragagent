@@ -123,17 +123,34 @@ class DocumentService:
             chunks = ChunkingService.create_chunks(doc_id, file_name, text_content)
             chunks_count = len(chunks)
 
-            # 5. Generate Embeddings & Store in Vector Store
+            # 5. Generate Embeddings
             embedding_data = await EmbeddingService.generate_embeddings(chunks)
             embeddings = [item["embedding"] for item in embedding_data]
 
+            # 6. Save Chunks & Embeddings in PostgreSQL Database
+            from app.models.document_chunk import DocumentChunkModel
+            db_chunks = [
+                DocumentChunkModel(
+                    id=chunk.chunk_id,
+                    document_id=doc_id,
+                    document_name=file_name,
+                    page_number=chunk.page_number,
+                    chunk_index=chunk.chunk_index,
+                    text=chunk.text,
+                    embedding_json=json.dumps(embeddings[i])
+                )
+                for i, chunk in enumerate(chunks)
+            ]
+            db.add_all(db_chunks)
+
+            # 7. Store in Vector Store
             await VectorStoreService.upsert_chunks(chunks, embeddings)
             
             # Update record
             db_doc.page_count = pages_count
             db_doc.chunks_count = chunks_count
             db_doc.status = DocumentStatus.ready
-            print(f"✅ Success: Document '{file_name}' processed.")
+            print(f"✅ Success: Document '{file_name}' processed with {chunks_count} chunks.")
 
         except Exception as e:
             print(f"❌ Document processing error: {e}")
