@@ -398,13 +398,24 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return Message.fromJson(json.decode(response.body));
+        final data = json.decode(response.body);
+        return Message.fromJson(data);
       } else {
-        final error = json.decode(response.body)['detail'] ?? 'Failed to generate answer';
-        throw Exception(error);
+        String errorDetail = 'Server response (${response.statusCode})';
+        try {
+          final data = json.decode(response.body);
+          if (data is Map && data.containsKey('detail')) {
+            errorDetail = data['detail'].toString();
+          }
+        } catch (_) {
+          if (response.statusCode == 502 || response.statusCode == 503) {
+            errorDetail = 'Backend is currently restarting/deploying. Please try again in 10 seconds.';
+          }
+        }
+        throw Exception(errorDetail);
       }
     } catch (e) {
-      throw Exception('RAG Agent error: $e');
+      throw Exception('RAG Agent error: ${e.toString().replaceAll("Exception: ", "")}');
     }
   }
 }
