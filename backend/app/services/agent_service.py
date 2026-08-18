@@ -116,14 +116,25 @@ INSTRUCTIONS:
             answer = f"⚠️ Error communicating with AI provider ({provider}): {str(e)}"
 
         # Step 6: Persist User message and Assistant response
-        ConversationService.add_message(db, conversation_id, MessageRole.user, question)
-        
-        assistant_message = ConversationService.add_message(
-            db=db,
-            conversation_id=conversation_id,
-            role=MessageRole.assistant,
-            content=answer,
-            sources=sources
-        )
+        try:
+            ConversationService.add_message(db, conversation_id, MessageRole.user, question)
+            assistant_message = ConversationService.add_message(
+                db=db,
+                conversation_id=conversation_id,
+                role=MessageRole.assistant,
+                content=answer,
+                sources=sources
+            )
+        except Exception as e:
+            logger.warning(f"Retrying message persistence after connection reset: {e}")
+            db.rollback()
+            ConversationService.add_message(db, conversation_id, MessageRole.user, question)
+            assistant_message = ConversationService.add_message(
+                db=db,
+                conversation_id=conversation_id,
+                role=MessageRole.assistant,
+                content=answer,
+                sources=sources
+            )
 
         return assistant_message

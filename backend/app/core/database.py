@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import NullPool
 from app.core.config import settings
 
 db_url = settings.DATABASE_URL if settings.DATABASE_URL else "sqlite:///./rag_agent.db"
@@ -14,12 +15,18 @@ if db_url.startswith("sqlite"):
         connect_args={"check_same_thread": False}
     )
 else:
+    # Use NullPool with TCP keepalives and sslmode for Render + Supabase/cloud PostgreSQL.
+    # NullPool creates clean connections and prevents stale SSL socket decryption errors.
     engine = create_engine(
         db_url,
-        pool_pre_ping=True,       # Pings DB before each query; auto-reconnects if connection was closed
-        pool_recycle=300,         # Recycles idle connections every 5 minutes to prevent SSL drops
-        pool_size=10,             # Base connection pool size
-        max_overflow=20,          # Extra connections allowed during traffic spikes
+        poolclass=NullPool,
+        connect_args={
+            "sslmode": "require",
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
+        }
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
