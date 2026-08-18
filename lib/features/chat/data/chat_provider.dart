@@ -123,16 +123,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
         _conversationId = conv.id;
       }
     } catch (e) {
+      final cleanErr = e.toString().replaceAll('Exception: ', '').replaceAll('Network error: ', '');
       final failMessage = Message(
         id: 'conv_err_${DateTime.now().millisecondsSinceEpoch}',
-        text: '⚠️ **Could not connect to backend**\n\nPlease verify your internet connection or check that the backend is online.',
+        text: '⚠️ **Could not connect to backend** ($cleanErr)\n\nPlease verify your internet connection or try again in a moment while the server spins up.',
         isUser: false,
         timestamp: DateTime.now(),
       );
       state = state.copyWith(
         messages: [...state.messages, failMessage],
         isLoading: false,
-        error: "Failed to initialize conversation.",
+        error: cleanErr,
       );
       return;
     }
